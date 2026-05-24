@@ -317,6 +317,42 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   white-space: pre-wrap;
   word-break: break-word;
 }
+.info-field-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.info-value-empty { color: var(--text-faint); }
+.info-edit {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 3px 6px;
+  border: 1px solid transparent;
+}
+.info-edit:hover { color: var(--text); border-color: var(--line); }
+.info-edit-save { color: var(--caspian); }
+.info-edit-save:hover { color: var(--caspian); border-color: var(--caspian-soft); background: var(--caspian-soft); }
+.info-edit-area {
+  width: 100%;
+  background: var(--ink);
+  color: var(--text);
+  border: 1px solid var(--line-strong);
+  padding: 10px 12px;
+  font: inherit;
+  font-family: var(--font-sans);
+  font-weight: 300;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  min-height: 80px;
+}
+.info-edit-area:focus { outline: none; border-color: var(--caspian); }
+.info-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 8px;
+}
+
 .info-sessions { list-style: none; margin: 0; padding: 0; }
 .info-sessions li { margin: 0; padding: 0; }
 .info-sessions button {

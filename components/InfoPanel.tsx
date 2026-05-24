@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { Artifact } from '@/lib/types';
+import { useRouter } from 'next/navigation';
+import type { Artifact, EditableField } from '@/lib/types';
 import type { SessionFile } from '@/lib/sessions';
 
 function Field({ label, value }: { label: string; value?: string }) {
@@ -10,6 +11,77 @@ function Field({ label, value }: { label: string; value?: string }) {
     <div className="info-field">
       <div className="kicker">{label}</div>
       <div className="info-value">{value}</div>
+    </div>
+  );
+}
+
+function EditableFieldRow({
+  label,
+  field,
+  value,
+  artifactId,
+  onSaved,
+}: {
+  label: string;
+  field: EditableField;
+  value: string | undefined;
+  artifactId: string;
+  onSaved: (v: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value ?? '');
+  const [busy, setBusy] = useState(false);
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch('/api/action', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ kind: 'patch', artifact_id: artifactId, patch: { [field]: draft } }),
+      });
+      if (res.ok) {
+        onSaved(draft);
+        setEditing(false);
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!editing) {
+    return (
+      <div className="info-field">
+        <div className="kicker info-field-head">
+          <span>{label}</span>
+          <button className="info-edit" onClick={() => { setDraft(value ?? ''); setEditing(true); }}>
+            {value ? 'edit' : 'add'}
+          </button>
+        </div>
+        {value
+          ? <div className="info-value">{value}</div>
+          : <div className="info-value info-value-empty">—</div>}
+      </div>
+    );
+  }
+  return (
+    <div className="info-field">
+      <div className="kicker info-field-head">
+        <span>{label}</span>
+      </div>
+      <textarea
+        className="info-edit-area"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        rows={4}
+        autoFocus
+      />
+      <div className="info-edit-actions">
+        <button className="info-edit" onClick={() => setEditing(false)} disabled={busy}>cancel</button>
+        <button className="info-edit info-edit-save" onClick={save} disabled={busy}>
+          {busy ? 'saving' : 'save'}
+        </button>
+      </div>
     </div>
   );
 }
@@ -30,8 +102,19 @@ const KIND_LABEL: Record<SessionFile['kind'], string> = {
 };
 
 export function InfoPanel({ artifact, sessions }: { artifact: Artifact; sessions: SessionFile[] }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [local, setLocal] = useState({
+    next_action: artifact.next_action,
+    re_entry_summary: artifact.re_entry_summary,
+    last_session_summary: artifact.last_session_summary,
+    notes: artifact.notes,
+  });
+  const refreshAfterSave = (field: EditableField, v: string) => {
+    setLocal((s) => ({ ...s, [field]: v }));
+    router.refresh();
+  };
 
   const openFile = async (filePath: string) => {
     if (busy) return;
@@ -75,10 +158,18 @@ export function InfoPanel({ artifact, sessions }: { artifact: Artifact; sessions
               <div className="info-title">{artifact.title}</div>
               <div className="kicker">{artifact.arc} · {artifact.kind} · stage {artifact.stage}</div>
             </div>
-            <Field label="next action" value={artifact.next_action} />
-            <Field label="re-entry summary" value={artifact.re_entry_summary} />
-            <Field label="last session summary" value={artifact.last_session_summary} />
-            <Field label="notes" value={artifact.notes} />
+            <EditableFieldRow label="next action" field="next_action"
+              value={local.next_action} artifactId={artifact.id}
+              onSaved={(v) => refreshAfterSave('next_action', v)} />
+            <EditableFieldRow label="re-entry summary" field="re_entry_summary"
+              value={local.re_entry_summary} artifactId={artifact.id}
+              onSaved={(v) => refreshAfterSave('re_entry_summary', v)} />
+            <EditableFieldRow label="last session summary" field="last_session_summary"
+              value={local.last_session_summary} artifactId={artifact.id}
+              onSaved={(v) => refreshAfterSave('last_session_summary', v)} />
+            <EditableFieldRow label="notes" field="notes"
+              value={local.notes} artifactId={artifact.id}
+              onSaved={(v) => refreshAfterSave('notes', v)} />
             <Field label="last touched" value={artifact.last_touched} />
             <Field label="repo" value={artifact.repo_path} />
             <Field label="folder" value={artifact.folder_path} />

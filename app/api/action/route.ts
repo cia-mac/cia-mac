@@ -51,6 +51,27 @@ export async function POST(req: Request): Promise<NextResponse<ActionResult>> {
   if (body.kind === 'open-folder') return NextResponse.json(await openFolder(a));
   if (body.kind === 'open-preview') return NextResponse.json(await openPreview(a));
 
+  if (body.kind === 'patch') {
+    if (!a.__sidecar_path) {
+      return NextResponse.json({ ok: false, message: 'Artifact has no sidecar path to write to.' }, { status: 400 });
+    }
+    const allowed = new Set(['next_action', 're_entry_summary', 'notes', 'last_session_summary']);
+    const safePatch: Record<string, string> = {};
+    for (const [k, v] of Object.entries(body.patch ?? {})) {
+      if (allowed.has(k) && typeof v === 'string') safePatch[k] = v;
+    }
+    if (Object.keys(safePatch).length === 0) {
+      return NextResponse.json({ ok: false, message: 'No editable fields supplied.' }, { status: 400 });
+    }
+    const updated = await patchSidecar(a.__sidecar_path, safePatch as Partial<Artifact>);
+    if (!updated) return NextResponse.json({ ok: false, message: 'Patch failed.' }, { status: 500 });
+    return NextResponse.json({
+      ok: true,
+      message: `Patched ${Object.keys(safePatch).join(', ')} on ${a.id}.`,
+      artifact: updated,
+    });
+  }
+
   if (body.kind === 'open-file') {
     const target = body.file_path;
     if (!target.startsWith('/') || target.includes('..')) {

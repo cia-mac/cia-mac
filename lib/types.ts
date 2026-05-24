@@ -31,10 +31,13 @@ export type Artifact = {
 
 export type SessionKind = 'resume' | 'audit' | 'exit' | 'save';
 
+export type EditableField = 'next_action' | 're_entry_summary' | 'notes' | 'last_session_summary';
+
 export type ActionRequest =
   | { kind: 'open-folder'; artifact_id: string }
   | { kind: 'open-preview'; artifact_id: string }
   | { kind: 'open-file'; artifact_id: string; file_path: string }
+  | { kind: 'patch'; artifact_id: string; patch: Partial<Record<EditableField, string>> }
   | { kind: SessionKind; artifact_id: string; body?: string };
 
 export type ActionResult = {
