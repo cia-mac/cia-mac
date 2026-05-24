@@ -1,0 +1,18 @@
+:root {
+  --ink: #0a0a0b;
+  --ink-2: #111114;
+  --ink-3: #1a1a1f;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --text: #e8e8e8;
+  --text-dim: rgba(232, 232, 232, 0.55);
+  --text-faint: rgba(232, 232, 232, 0.32);
+  --caspian: #5b8ec9;
+  --caspian-soft: rgba(91, 142, 201, 0.18);
+  --warning: #c9925b;
+
+  --font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --pulse-soft-duration: 2.8s;
+}

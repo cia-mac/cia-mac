@@ -51,6 +51,18 @@ export async function POST(req: Request): Promise<NextResponse<ActionResult>> {
   if (body.kind === 'open-folder') return NextResponse.json(await openFolder(a));
   if (body.kind === 'open-preview') return NextResponse.json(await openPreview(a));
 
+  if (body.kind === 'open-file') {
+    const target = body.file_path;
+    if (!target.startsWith('/') || target.includes('..')) {
+      return NextResponse.json({ ok: false, message: 'Bad file path.' }, { status: 400 });
+    }
+    if (IS_MAC) {
+      openOnMac(target);
+      return NextResponse.json({ ok: true, message: `Opened ${target}.` });
+    }
+    return NextResponse.json({ ok: true, message: 'Not on macOS — copy this:', command: `open "${target}"` });
+  }
+
   if (body.kind === 'resume' || body.kind === 'audit' || body.kind === 'exit' || body.kind === 'save') {
     const { filePath, when } = await writeSession(body.kind, a, body.body);
     let updated = a;

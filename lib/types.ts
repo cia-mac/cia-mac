@@ -34,6 +34,7 @@ export type SessionKind = 'resume' | 'audit' | 'exit' | 'save';
 export type ActionRequest =
   | { kind: 'open-folder'; artifact_id: string }
   | { kind: 'open-preview'; artifact_id: string }
+  | { kind: 'open-file'; artifact_id: string; file_path: string }
   | { kind: SessionKind; artifact_id: string; body?: string };
 
 export type ActionResult = {

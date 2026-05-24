@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { findArtifact } from '@/lib/artifacts';
+import { listSessions } from '@/lib/sessions';
 import { WorkbenchStage } from '@/components/WorkbenchStage';
 import { CommandBar } from '@/components/CommandBar';
 import { InfoPanel } from '@/components/InfoPanel';
@@ -15,13 +16,14 @@ export default async function WorkbenchPage({
   const { id } = await params;
   const artifact = await findArtifact(id);
   if (!artifact) notFound();
+  const sessions = await listSessions(id);
 
   return (
     <div className="workbench">
       <div className="workbench-meta">
         {artifact.arc} · {artifact.kind} · stage {artifact.stage}
       </div>
-      <InfoPanel artifact={artifact} />
+      <InfoPanel artifact={artifact} sessions={sessions} />
       <Link href="/" className="workbench-close" aria-label="Back to grid">
         ← GRID
       </Link>

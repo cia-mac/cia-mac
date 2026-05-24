@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { Artifact } from '@/lib/types';
+import type { SessionFile } from '@/lib/sessions';
 
 function Field({ label, value }: { label: string; value?: string }) {
   if (!value) return null;
@@ -13,8 +14,38 @@ function Field({ label, value }: { label: string; value?: string }) {
   );
 }
 
-export function InfoPanel({ artifact }: { artifact: Artifact }) {
+function formatWhen(iso: string): string {
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  } catch { return iso; }
+}
+
+const KIND_LABEL: Record<SessionFile['kind'], string> = {
+  resume: 'resume',
+  audit: 'audit',
+  exit: 'exit',
+  save: 'save',
+};
+
+export function InfoPanel({ artifact, sessions }: { artifact: Artifact; sessions: SessionFile[] }) {
   const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const openFile = async (filePath: string) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await fetch('/api/action', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ kind: 'open-file', artifact_id: artifact.id, file_path: filePath }),
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -52,6 +83,23 @@ export function InfoPanel({ artifact }: { artifact: Artifact }) {
             <Field label="repo" value={artifact.repo_path} />
             <Field label="folder" value={artifact.folder_path} />
             <Field label="source" value={artifact.source_url} />
+
+            {sessions.length > 0 && (
+              <div className="info-field">
+                <div className="kicker">prior sessions · {sessions.length}</div>
+                <ul className="info-sessions">
+                  {sessions.map((s) => (
+                    <li key={s.filename}>
+                      <button onClick={() => openFile(s.full_path)} disabled={busy}>
+                        <span className={`session-kind session-${s.kind}`}>{KIND_LABEL[s.kind]}</span>
+                        <span className="session-when">{formatWhen(s.when_iso)}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="info-hint kicker">press i or esc to close</div>
           </aside>
         </>

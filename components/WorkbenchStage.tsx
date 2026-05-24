@@ -28,8 +28,10 @@ export async function WorkbenchStage({ artifact }: { artifact: Artifact }) {
   }
   return (
     <div className="workbench-fallback">
-      No previewable surface for this artifact yet.<br />
-      Add <code>preview_url</code>, <code>preview_image</code>, or <code>source_path</code> to its <code>.portal.json</code>.
+      Nothing embeddable on this artifact.<br />
+      {artifact.preview_url || artifact.source_url
+        ? <>Use <strong>Open Preview</strong> to view it in the browser, or press <strong>i</strong> for context.</>
+        : <>Add <code>preview_url</code>, <code>preview_image</code>, or <code>source_path</code> to its <code>.portal.json</code>.</>}
     </div>
   );
 }
