@@ -1,0 +1,13 @@
+{
+  "id": "ai-dashboard",
+  "title": "Ally · ai-dashboard",
+  "arc": "system",
+  "kind": "app",
+  "stage": 4,
+  "preview_url": "http://localhost:8800",
+  "repo_path": "~/Developer/ai-dashboard",
+  "folder_path": "~/Developer/ai-dashboard",
+  "last_session_summary": "The surface that actually became daily. Localhost-only, called something different from the named Console — that mismatch is what Portal is meant to resolve.",
+  "next_action": "Decide: does Ally fold into Portal as a tab/workspace, or does Portal absorb its capabilities and Ally retires?",
+  "notes": "From Surface Audit 2026-05-23: ABSORB ai-dashboard into ciamac-portal (separate session). The 'Console ≠ AI Dashboard' memory rule is itself proof the surfaces compete in conversation."
+}

@@ -1,0 +1,14 @@
+{
+  "id": "portal-self",
+  "title": "Portal · v0 scaffold",
+  "arc": "system",
+  "kind": "app",
+  "stage": 2,
+  "preview_url": "http://localhost:8801",
+  "repo_path": "~/Developer/cia-mac",
+  "folder_path": "~/Developer/cia-mac",
+  "source_url": "https://github.com/cia-mac/cia-mac/tree/claude/portal-synthesis-lsUou",
+  "last_session_summary": "Built v0 scaffold from the Prior Attempts Synthesis: grid-only home, 6-button bottom bar, sidecar-first registry, inherits Portal v5 visual contract.",
+  "next_action": "Pull on Mac, run `npm install && npm run dev`, drop .portal.json sidecars into 2–3 ~/Developer/ repos, and test the Resume Claude + Exit Ritual flows end-to-end.",
+  "last_touched": "2026-05-24T16-49-10-745Z"
+}

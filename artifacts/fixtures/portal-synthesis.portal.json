@@ -1,0 +1,12 @@
+{
+  "id": "portal-synthesis",
+  "title": "Portal · Prior Attempts Synthesis",
+  "arc": "system",
+  "kind": "markdown",
+  "stage": 4,
+  "source_url": "https://www.notion.so/36af87ed3fbb810d9344d7f29690e050",
+  "preview_url": "https://www.notion.so/36af87ed3fbb810d9344d7f29690e050",
+  "last_session_summary": "Synthesized 11 prior dashboard/portal/console attempts. Proposed grid-only home + 6-button bar + sidecar-first registry. Killed: Today card, Pieces matrix, tabs. Parked: AI Review Room DB, Gemini bridge, COMMIT+DEPLOY.",
+  "next_action": "Send to ChatGPT and Gemini per the Decision Pause protocol — OR ratify directly and move to v0.1 (more sidecars, audit-script wiring, real preview thumbnails).",
+  "notes": "Lives under One Portal · For ChatGPT Review in Notion. Supersedes the AGREED v1 brief from earlier the same day."
+}

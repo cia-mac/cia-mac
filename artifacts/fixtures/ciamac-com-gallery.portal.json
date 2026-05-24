@@ -1,0 +1,13 @@
+{
+  "id": "ciamac-com-gallery",
+  "title": "ciamac.com · gallery",
+  "arc": "imaging",
+  "kind": "page",
+  "stage": 5,
+  "preview_url": "https://ciamac.com",
+  "repo_path": "~/Developer/ciamac-gallery",
+  "folder_path": "~/Developer/ciamac-gallery",
+  "source_url": "https://ciamac.com",
+  "last_session_summary": "Portal v5 design locked 2026-05-14: dark-only, centered axis, Helvetica Neue 300/200/100, Caspian palette, portal-pulse-soft animation. Final commit afca51a.",
+  "next_action": "Decide whether the gallery's tokens.css moves into a shared package consumed by Portal-the-workbench."
+}
