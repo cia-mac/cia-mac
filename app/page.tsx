@@ -2,9 +2,13 @@ import { discoverArtifacts } from '@/lib/artifacts';
 import { Tile } from '@/components/Tile';
 import { Wordmark } from '@/components/Wordmark';
 import { PORTAL_ROOTS } from '@/lib/config';
+import { ARC_HUE } from '@/lib/visual';
+import type { Arc } from '@/lib/types';
 import path from 'node:path';
 
 export const dynamic = 'force-dynamic';
+
+const ARCS_ORDER: Arc[] = ['imaging', 'eranshahr', 'films', 'writing', 'system'];
 
 export default async function Page() {
   const { artifacts, errors } = await discoverArtifacts();
@@ -23,15 +27,27 @@ export default async function Page() {
   );
   const hidden = artifacts.length - visible.length;
 
+  const arcCounts: Record<string, number> = {};
+  for (const a of visible) arcCounts[a.arc] = (arcCounts[a.arc] ?? 0) + 1;
+
   return (
     <>
       <Wordmark />
       <main className="grid-shell">
         <div className="grid-meta">
           <div className="kicker">workbench</div>
+          <div className="grid-arc-strip">
+            {ARCS_ORDER.filter((a) => arcCounts[a]).map((arc) => (
+              <span key={arc} className="grid-arc-pip">
+                <span className="grid-arc-dot" style={{ background: `hsl(${ARC_HUE[arc]},55%,65%)` }} />
+                <span className="grid-arc-name">{arc}</span>
+                <span className="grid-arc-count">{arcCounts[arc]}</span>
+              </span>
+            ))}
+          </div>
           <div className="grid-meta-count">
             {visible.length} artifact{visible.length === 1 ? '' : 's'}
-            {hidden > 0 && ` · ${hidden} hidden (no preview yet)`}
+            {hidden > 0 && ` · ${hidden} hidden`}
           </div>
         </div>
 

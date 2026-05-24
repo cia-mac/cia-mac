@@ -20,9 +20,6 @@ export default async function WorkbenchPage({
 
   return (
     <div className="workbench">
-      <div className="workbench-meta">
-        {artifact.arc} · {artifact.kind} · stage {artifact.stage}
-      </div>
       <InfoPanel artifact={artifact} sessions={sessions} />
       <Link href="/" className="workbench-close" aria-label="Back to grid">
         ← GRID

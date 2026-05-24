@@ -33,7 +33,7 @@ const stubs: Btn[] = [
 export function CommandBar({ artifact }: { artifact: Artifact }) {
   const [toast, setToast] = useState<string | null>(null);
   const [cmd, setCmd] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [runningKind, setRunningKind] = useState<ActionKind | null>(null);
 
   const flash = (msg: string, command?: string) => {
     setToast(msg);
@@ -42,8 +42,8 @@ export function CommandBar({ artifact }: { artifact: Artifact }) {
   };
 
   const fire = async (kind: ActionKind) => {
-    if (busy) return;
-    setBusy(true);
+    if (runningKind) return;
+    setRunningKind(kind);
     try {
       const res = await fetch('/api/action', {
         method: 'POST',
@@ -55,7 +55,7 @@ export function CommandBar({ artifact }: { artifact: Artifact }) {
     } catch (e) {
       flash(`Failed: ${(e as Error).message}`);
     } finally {
-      setBusy(false);
+      setRunningKind(null);
     }
   };
 
@@ -71,16 +71,19 @@ export function CommandBar({ artifact }: { artifact: Artifact }) {
         <div className="cmdbar-inner">
           {buttons.map((b) => {
             const enabled = !b.requires || b.requires(artifact);
+            const running = runningKind === b.kind;
+            const classes = [enabled ? '' : 'unmet', running ? 'running' : ''].filter(Boolean).join(' ');
             return (
               <button
                 key={b.label}
                 onClick={() => enabled ? fire(b.kind) : flash(b.missingHint ?? 'Unavailable.')}
-                disabled={busy}
+                disabled={!!runningKind && !running}
                 aria-disabled={!enabled}
                 title={enabled ? '' : b.missingHint}
-                className={enabled ? '' : 'unmet'}
+                className={classes}
               >
                 {b.label}
+                {running && <span className="cmd-spin" aria-hidden>·</span>}
               </button>
             );
           })}

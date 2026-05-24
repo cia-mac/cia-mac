@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { Artifact } from '@/lib/types';
-import { ARC_HUE, KIND_GLYPH, hashId } from '@/lib/visual';
+import { ARC_HUE, KIND_GLYPH, hashId, relativeTime } from '@/lib/visual';
 
 const LOCAL_IFRAME_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0']);
 
@@ -79,8 +79,13 @@ export function Tile({ artifact }: { artifact: Artifact }) {
       <div className="tile-foot">
         <div className="tile-title">{artifact.title}</div>
         <div className="tile-meta">
-          <span className={`stage-dot stage-${artifact.stage}`} />
-          <span className="tile-meta-text">{artifact.kind} · {artifact.stage}</span>
+          <span className="tile-meta-left">
+            <span className={`stage-dot stage-${artifact.stage}`} />
+            <span className="tile-meta-text">{artifact.kind} · {artifact.stage}</span>
+          </span>
+          {relativeTime(artifact.last_touched) && (
+            <span className="tile-meta-when">{relativeTime(artifact.last_touched)}</span>
+          )}
         </div>
       </div>
     </Link>
