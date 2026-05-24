@@ -1,4 +1,4 @@
-export type Arc = 'imaging' | 'eranshahr' | 'films' | 'writing' | 'system';
+export type Arc = 'imaging' | 'iranshahr' | 'films' | 'writing' | 'system';
 
 export type ArtifactKind = 'page' | 'app' | 'markdown' | 'image' | 'session' | 'study' | 'writing';
 

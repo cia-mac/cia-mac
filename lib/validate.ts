@@ -1,6 +1,6 @@
 import type { Artifact } from './types';
 
-const ARCS = new Set(['imaging', 'eranshahr', 'films', 'writing', 'system']);
+const ARCS = new Set(['imaging', 'iranshahr', 'films', 'writing', 'system']);
 const KINDS = new Set(['page', 'app', 'markdown', 'image', 'session', 'study', 'writing']);
 
 export type SidecarError = {

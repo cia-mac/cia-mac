@@ -2,7 +2,7 @@ import type { Arc, ArtifactKind } from './types';
 
 export const ARC_HUE: Record<Arc, number> = {
   imaging: 32,
-  eranshahr: 220,
+  iranshahr: 220,
   films: 340,
   writing: 180,
   system: 210,

@@ -9,7 +9,7 @@ await fs.mkdir(OUT, { recursive: true });
 
 const ARC_TINT = {
   imaging:   { hue: 32,  name: 'amber'   },
-  eranshahr: { hue: 220, name: 'lapis'   },
+  iranshahr: { hue: 220, name: 'lapis'   },
   films:     { hue: 340, name: 'magenta' },
   writing:   { hue: 180, name: 'cyan'    },
   system:    { hue: 210, name: 'caspian' },

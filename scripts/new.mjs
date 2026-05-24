@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 
-const ARCS = ['imaging', 'eranshahr', 'films', 'writing', 'system'];
+const ARCS = ['imaging', 'iranshahr', 'films', 'writing', 'system'];
 const KINDS = ['page', 'app', 'markdown', 'image', 'session', 'study'];
 
 const usage = `Usage:
@@ -27,7 +27,7 @@ Optional:
                          pass --to=<repo-path> to drop a .portal.json next to a repo
 
 Examples:
-  npm run new -- --id=eranshahr-tile --title="Eranshahr · prologue" --arc=eranshahr --kind=writing --stage=1 --notes="..."
+  npm run new -- --id=iranshahr-tile --title="Iranshahr · prologue" --arc=iranshahr --kind=writing --stage=1 --notes="..."
   npm run new -- --id=ai-dashboard --title="Ally" --arc=system --kind=app --preview-url=http://localhost:8800 --to=~/Developer/ai-dashboard
 `;
 

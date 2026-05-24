@@ -8,7 +8,7 @@ import path from 'node:path';
 
 export const dynamic = 'force-dynamic';
 
-const ARCS_ORDER: Arc[] = ['imaging', 'eranshahr', 'films', 'writing', 'system'];
+const ARCS_ORDER: Arc[] = ['imaging', 'iranshahr', 'films', 'writing', 'system'];
 
 export default async function Page() {
   const { artifacts, errors } = await discoverArtifacts();
