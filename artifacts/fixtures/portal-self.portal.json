@@ -2,13 +2,12 @@
   "id": "portal-self",
   "title": "Portal · v0 scaffold",
   "arc": "system",
-  "kind": "app",
+  "kind": "study",
   "stage": 2,
-  "preview_url": "http://localhost:8801",
   "repo_path": "~/Developer/cia-mac",
   "folder_path": "~/Developer/cia-mac",
   "source_url": "https://github.com/cia-mac/cia-mac/tree/claude/portal-synthesis-lsUou",
-  "last_session_summary": "Built v0 scaffold from the Prior Attempts Synthesis: grid-only home, 6-button bottom bar, sidecar-first registry, inherits Portal v5 visual contract.",
-  "next_action": "Pull on Mac, run `npm install && npm run dev`, drop .portal.json sidecars into 2–3 ~/Developer/ repos, and test the Resume Claude + Exit Ritual flows end-to-end.",
-  "last_touched": "2026-05-24T16-49-10-745Z"
+  "notes": "Grid-only home, 6-button bottom bar, sidecar-first registry. Inherits Portal v5 visual contract (dark, centered, Helvetica Neue 300/200/100, Caspian, portal-pulse-soft). No Today card, no Pieces matrix, no tabs. Six buttons: Open Preview, Open Folder, Resume Claude, Audit Build, Exit Ritual, Save for Later. Everything else is a labeled stub.",
+  "last_session_summary": "v0 scaffold pushed: Next.js 15 + plain CSS, sidecar-first, all six buttons wired, CI green.",
+  "next_action": "Drop .portal.json sidecars into 2–3 real ~/Developer/ repos, set PORTAL_ROOTS, and shake out the Audit/Resume/Exit flows for a week before promoting any stubs."
 }

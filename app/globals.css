@@ -160,6 +160,13 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   margin-right: 6px;
   vertical-align: middle;
 }
+.stage-0 { background: #2e3540; }
+.stage-1 { background: #3d4d63; }
+.stage-2 { background: #4a6685; }
+.stage-3 { background: #5b8ec9; }
+.stage-4 { background: #7aa9dd; box-shadow: 0 0 6px rgba(122,169,221,0.55); }
+.stage-5 { background: #b0d2f0; box-shadow: 0 0 8px rgba(176,210,240,0.7); }
+.stage-6 { background: #6b6b72; opacity: 0.65; }
 
 .empty {
   border: 1px dashed var(--line);

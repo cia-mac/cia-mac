@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import fs from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { findArtifact } from '@/lib/artifacts';
 import { patchSidecar } from '@/lib/sidecar';
@@ -8,6 +9,12 @@ import type { ActionRequest, ActionResult, Artifact } from '@/lib/types';
 
 function openOnMac(target: string): void {
   spawn('open', [target], { detached: true, stdio: 'ignore' }).unref();
+}
+
+function pbcopy(text: string): void {
+  const child = spawn('pbcopy');
+  child.on('error', () => {});
+  child.stdin.end(text);
 }
 
 async function openFolder(a: Artifact): Promise<ActionResult> {
@@ -55,10 +62,20 @@ export async function POST(req: Request): Promise<NextResponse<ActionResult>> {
         if (patched) updated = patched;
       }
     }
-    if (IS_MAC) openOnMac(filePath);
+    let suffix = '';
+    if (IS_MAC) {
+      openOnMac(filePath);
+      if (body.kind === 'resume') {
+        try {
+          const text = await fs.readFile(filePath, 'utf8');
+          pbcopy(text);
+          suffix = ' Copied to clipboard.';
+        } catch { /* clipboard is a nice-to-have */ }
+      }
+    }
     return NextResponse.json({
       ok: true,
-      message: IS_MAC ? `Wrote ${filePath} and opened it.` : `Wrote ${filePath}.`,
+      message: IS_MAC ? `Wrote ${filePath} and opened it.${suffix}` : `Wrote ${filePath}.`,
       file_path: filePath,
       artifact: updated,
     });

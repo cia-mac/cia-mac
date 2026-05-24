@@ -7,7 +7,19 @@ export const dynamic = 'force-dynamic';
 
 export default async function Page() {
   const artifacts = await discoverArtifacts();
-  const visible = artifacts.filter((a) => a.preview_image || a.preview_url || (a.kind === 'markdown' && a.notes));
+  const isTextShaped = (k: string) => k === 'markdown' || k === 'study' || k === 'session';
+  const isLocalUrl = (u?: string) => {
+    if (!u) return false;
+    try {
+      const h = new URL(u).hostname;
+      return h === 'localhost' || h === '127.0.0.1' || h === '0.0.0.0';
+    } catch { return false; }
+  };
+  const visible = artifacts.filter((a) =>
+    a.preview_image
+    || isLocalUrl(a.preview_url)
+    || (isTextShaped(a.kind) && a.notes)
+  );
   const hidden = artifacts.length - visible.length;
 
   return (
