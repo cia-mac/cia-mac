@@ -7,7 +7,8 @@
     "dev": "next dev -p 8801",
     "build": "next build",
     "start": "next start -p 8801",
-    "lint": "next lint"
+    "lint": "next lint",
+    "new": "node scripts/new.mjs"
   },
   "dependencies": {
     "next": "15.1.6",

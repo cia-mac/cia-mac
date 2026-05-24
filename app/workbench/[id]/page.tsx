@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { findArtifact } from '@/lib/artifacts';
 import { WorkbenchStage } from '@/components/WorkbenchStage';
 import { CommandBar } from '@/components/CommandBar';
+import { InfoPanel } from '@/components/InfoPanel';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +21,7 @@ export default async function WorkbenchPage({
       <div className="workbench-meta">
         {artifact.arc} · {artifact.kind} · stage {artifact.stage}
       </div>
+      <InfoPanel artifact={artifact} />
       <Link href="/" className="workbench-close" aria-label="Back to grid">
         ← GRID
       </Link>

@@ -2,11 +2,12 @@ import { discoverArtifacts } from '@/lib/artifacts';
 import { Tile } from '@/components/Tile';
 import { Wordmark } from '@/components/Wordmark';
 import { PORTAL_ROOTS } from '@/lib/config';
+import path from 'node:path';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Page() {
-  const artifacts = await discoverArtifacts();
+  const { artifacts, errors } = await discoverArtifacts();
   const isTextShaped = (k: string) => k === 'markdown' || k === 'study' || k === 'session';
   const isLocalUrl = (u?: string) => {
     if (!u) return false;
@@ -44,6 +45,20 @@ export default async function Page() {
         ) : (
           <div className="tile-grid">
             {visible.map((a) => <Tile key={a.id} artifact={a} />)}
+          </div>
+        )}
+
+        {errors.length > 0 && (
+          <div className="validation-strip">
+            <div className="kicker">sidecars with errors · {errors.length}</div>
+            <ul>
+              {errors.map((e) => (
+                <li key={e.path}>
+                  <code>{path.basename(e.path)}</code>
+                  <ul>{e.errors.map((m, i) => <li key={i}>{m}</li>)}</ul>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </main>

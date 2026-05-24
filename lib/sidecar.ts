@@ -1,16 +1,22 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Artifact } from './types';
+import { validateSidecar, type ValidationResult } from './validate';
 
-export async function readSidecar(filePath: string): Promise<Artifact | null> {
+export async function readSidecar(filePath: string): Promise<ValidationResult | null> {
+  let raw: string;
   try {
-    const raw = await fs.readFile(filePath, 'utf8');
-    const parsed = JSON.parse(raw) as Artifact;
-    if (!parsed.id || !parsed.title || !parsed.arc || !parsed.kind) return null;
-    return { ...parsed, __sidecar_path: filePath };
+    raw = await fs.readFile(filePath, 'utf8');
   } catch {
     return null;
   }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    return { ok: false, error: { path: filePath, errors: [`JSON parse error: ${(e as Error).message}`] } };
+  }
+  return validateSidecar(parsed, filePath);
 }
 
 export async function writeSidecar(filePath: string, artifact: Artifact): Promise<void> {
@@ -23,9 +29,9 @@ export async function patchSidecar(
   filePath: string,
   patch: Partial<Artifact>,
 ): Promise<Artifact | null> {
-  const current = await readSidecar(filePath);
-  if (!current) return null;
-  const merged: Artifact = { ...current, ...patch, __sidecar_path: filePath };
+  const result = await readSidecar(filePath);
+  if (!result || !result.ok) return null;
+  const merged: Artifact = { ...result.artifact, ...patch, __sidecar_path: filePath };
   await writeSidecar(filePath, merged);
   return merged;
 }

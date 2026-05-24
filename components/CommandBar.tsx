@@ -7,9 +7,15 @@ type ActionKind = SessionKind | 'open-folder' | 'open-preview';
 
 type Btn = { kind: ActionKind; label: string; stub?: false } | { stub: true; label: string; cmd: string };
 
-const buttons: Btn[] = [
-  { kind: 'open-preview', label: 'Open Preview' },
-  { kind: 'open-folder', label: 'Open Folder' },
+type ActionBtn = { kind: ActionKind; label: string; requires?: (a: Artifact) => boolean; missingHint?: string };
+
+const buttons: ActionBtn[] = [
+  { kind: 'open-preview', label: 'Open Preview',
+    requires: (a) => !!(a.preview_url || a.source_url),
+    missingHint: 'No preview_url or source_url on this sidecar.' },
+  { kind: 'open-folder', label: 'Open Folder',
+    requires: (a) => !!(a.folder_path || a.repo_path),
+    missingHint: 'No folder_path or repo_path on this sidecar.' },
   { kind: 'resume', label: 'Resume Claude' },
   { kind: 'audit', label: 'Audit Build' },
   { kind: 'exit', label: 'Exit Ritual' },
@@ -63,15 +69,21 @@ export function CommandBar({ artifact }: { artifact: Artifact }) {
       )}
       <div className="cmdbar">
         <div className="cmdbar-inner">
-          {buttons.map((b) => (
-            <button
-              key={b.label}
-              onClick={() => 'kind' in b && fire(b.kind)}
-              disabled={busy}
-            >
-              {b.label}
-            </button>
-          ))}
+          {buttons.map((b) => {
+            const enabled = !b.requires || b.requires(artifact);
+            return (
+              <button
+                key={b.label}
+                onClick={() => enabled ? fire(b.kind) : flash(b.missingHint ?? 'Unavailable.')}
+                disabled={busy}
+                aria-disabled={!enabled}
+                title={enabled ? '' : b.missingHint}
+                className={enabled ? '' : 'unmet'}
+              >
+                {b.label}
+              </button>
+            );
+          })}
         </div>
       </div>
       <div className="stub-strip" aria-label="Stubs (not promoted)">
