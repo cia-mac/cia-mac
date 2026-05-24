@@ -1,0 +1,12 @@
+{
+  "id": "local-agent-dispatch",
+  "title": "Local Agent · dispatch v1.1",
+  "arc": "system",
+  "kind": "app",
+  "stage": 4,
+  "repo_path": "~/Developer/local-agent",
+  "folder_path": "~/Developer/local-agent",
+  "preview_url": "http://localhost:8810",
+  "notes": "Daemon that watches ~/Inbox and routes files into the right arc based on the sidecar's arc tag. v1.1 adds the OCR step for handwritten scans before routing.",
+  "next_action": "Wire the dispatcher to Portal: when it moves a file, it should also write a .portal.json next to it. Make the link bidirectional."
+}

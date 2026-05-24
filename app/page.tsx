@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function Page() {
   const { artifacts, errors } = await discoverArtifacts();
-  const isTextShaped = (k: string) => k === 'markdown' || k === 'study' || k === 'session';
+  const isTextShaped = (k: string) => k === 'markdown' || k === 'study' || k === 'session' || k === 'writing';
   const isLocalUrl = (u?: string) => {
     if (!u) return false;
     try {

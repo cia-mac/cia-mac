@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <rect width="800" height="600" fill="#0a0a0b"/>
+  
+    <defs>
+      <radialGradient id="g-ciamac-com-gallery" cx="50%" cy="50%" r="65%">
+        <stop offset="0%" stop-color="hsla(32,65%,55%,0.38)"/>
+        <stop offset="60%" stop-color="hsla(32,60%,40%,0.11000000000000001)"/>
+        <stop offset="100%" stop-color="hsla(32,55%,30%,0)"/>
+      </radialGradient>
+    </defs>
+    <circle cx="-106" cy="-44" r="122" fill="url(#g-ciamac-com-gallery)" transform="rotate(132 -106 -44)"/>
+    <line x1="241" y1="262" x2="591" y2="262" stroke="hsla(32,50%,72%,0.17)" stroke-width="1"/>
+    <line x1="242" y1="262" x2="592" y2="262" stroke="hsla(32,50%,72%,0.17)" stroke-width="1"/>
+    <line x1="243" y1="262" x2="593" y2="262" stroke="hsla(32,50%,72%,0.17)" stroke-width="1"/>
+    <line x1="244" y1="262" x2="594" y2="262" stroke="hsla(32,50%,72%,0.17)" stroke-width="1"/>
+    <line x1="245" y1="262" x2="595" y2="262" stroke="hsla(32,50%,72%,0.17)" stroke-width="1"/>
+    <line x1="246" y1="262" x2="596" y2="262" stroke="hsla(32,50%,72%,0.17)" stroke-width="1"/>
+    <line x1="247" y1="262" x2="597" y2="262" stroke="hsla(32,50%,72%,0.17)" stroke-width="1"/>
+    <line x1="248" y1="262" x2="598" y2="262" stroke="hsla(32,50%,72%,0.17)" stroke-width="1"/>
+    <line x1="249" y1="262" x2="599" y2="262" stroke="hsla(32,50%,72%,0.17)" stroke-width="1"/>
+    <line x1="250" y1="262" x2="600" y2="262" stroke="hsla(32,50%,72%,0.17)" stroke-width="1"/>
+    <line x1="338" y1="271" x2="525" y2="271" stroke="hsla(32,50%,72%,0.16)" stroke-width="1"/>
+    <line x1="339" y1="271" x2="526" y2="271" stroke="hsla(32,50%,72%,0.16)" stroke-width="1"/>
+    <line x1="340" y1="271" x2="527" y2="271" stroke="hsla(32,50%,72%,0.16)" stroke-width="1"/>
+    <line x1="341" y1="271" x2="528" y2="271" stroke="hsla(32,50%,72%,0.16)" stroke-width="1"/>
+    <line x1="547" y1="-72" x2="423" y2="-72" stroke="hsla(32,60%,75%,0.55)" stroke-width="1.5"/>
+  
+  <rect x="0.5" y="0.5" width="799" height="599" fill="none" stroke="rgba(255,255,255,0.06)"/>
+</svg>

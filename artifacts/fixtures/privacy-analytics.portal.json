@@ -1,0 +1,10 @@
+{
+  "id": "privacy-analytics",
+  "title": "Privacy analytics for ciamac.com",
+  "arc": "system",
+  "kind": "study",
+  "stage": 5,
+  "notes": "Decided: no analytics. Not even privacy-respecting ones. The cost of knowing who visits exceeds the value of knowing. The gallery is published and that's the contract.",
+  "next_action": "Done. Pin this decision so the question doesn't keep reopening.",
+  "last_session_summary": "Exited the question. The repeated re-litigation was the symptom; the decision is the cure."
+}

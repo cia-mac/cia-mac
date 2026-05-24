@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <rect width="800" height="600" fill="#0a0a0b"/>
+  
+    <defs>
+      <radialGradient id="g-vermont-notebook" cx="50%" cy="50%" r="65%">
+        <stop offset="0%" stop-color="hsla(32,65%,55%,0.31)"/>
+        <stop offset="60%" stop-color="hsla(32,60%,40%,0.08000000000000002)"/>
+        <stop offset="100%" stop-color="hsla(32,55%,30%,0)"/>
+      </radialGradient>
+    </defs>
+    <circle cx="27" cy="-35" r="198" fill="url(#g-vermont-notebook)" transform="rotate(22 27 -35)"/>
+    <line x1="739" y1="148" x2="992" y2="148" stroke="hsla(32,50%,72%,0.16)" stroke-width="1"/>
+    <line x1="740" y1="148" x2="993" y2="148" stroke="hsla(32,50%,72%,0.16)" stroke-width="1"/>
+    <line x1="741" y1="148" x2="994" y2="148" stroke="hsla(32,50%,72%,0.16)" stroke-width="1"/>
+    <line x1="742" y1="148" x2="995" y2="148" stroke="hsla(32,50%,72%,0.16)" stroke-width="1"/>
+    <line x1="743" y1="148" x2="996" y2="148" stroke="hsla(32,50%,72%,0.16)" stroke-width="1"/>
+    <line x1="744" y1="148" x2="997" y2="148" stroke="hsla(32,50%,72%,0.16)" stroke-width="1"/>
+    <line x1="745" y1="148" x2="998" y2="148" stroke="hsla(32,50%,72%,0.16)" stroke-width="1"/>
+    <line x1="746" y1="148" x2="999" y2="148" stroke="hsla(32,50%,72%,0.16)" stroke-width="1"/>
+    <line x1="747" y1="148" x2="1000" y2="148" stroke="hsla(32,50%,72%,0.16)" stroke-width="1"/>
+    <line x1="748" y1="148" x2="1001" y2="148" stroke="hsla(32,50%,72%,0.16)" stroke-width="1"/>
+    <line x1="148" y1="40" x2="184" y2="40" stroke="hsla(32,50%,72%,-0.07)" stroke-width="1"/>
+    <line x1="149" y1="40" x2="185" y2="40" stroke="hsla(32,50%,72%,-0.07)" stroke-width="1"/>
+    <line x1="150" y1="40" x2="186" y2="40" stroke="hsla(32,50%,72%,-0.07)" stroke-width="1"/>
+    <line x1="151" y1="40" x2="187" y2="40" stroke="hsla(32,50%,72%,-0.07)" stroke-width="1"/>
+    <line x1="152" y1="40" x2="188" y2="40" stroke="hsla(32,50%,72%,-0.07)" stroke-width="1"/>
+    <line x1="153" y1="40" x2="189" y2="40" stroke="hsla(32,50%,72%,-0.07)" stroke-width="1"/>
+    <line x1="613" y1="477" x2="931" y2="477" stroke="hsla(32,60%,75%,0.55)" stroke-width="1.5"/>
+  
+  <rect x="0.5" y="0.5" width="799" height="599" fill="none" stroke="rgba(255,255,255,0.06)"/>
+</svg>

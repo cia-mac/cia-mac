@@ -1,6 +1,6 @@
 export type Arc = 'imaging' | 'eranshahr' | 'films' | 'writing' | 'system';
 
-export type ArtifactKind = 'page' | 'app' | 'markdown' | 'image' | 'session' | 'study';
+export type ArtifactKind = 'page' | 'app' | 'markdown' | 'image' | 'session' | 'study' | 'writing';
 
 export type CascadeStage = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 

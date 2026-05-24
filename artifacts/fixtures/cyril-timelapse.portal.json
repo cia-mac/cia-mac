@@ -1,0 +1,11 @@
+{
+  "id": "cyril-timelapse",
+  "title": "Cyril · timelapse render",
+  "arc": "films",
+  "kind": "session",
+  "stage": 4,
+  "repo_path": "~/Developer/cyril-timelapse",
+  "folder_path": "~/Developer/cyril-timelapse",
+  "notes": "Render queue: 4,217 frames at 6K. ProRes 422 HQ, 24fps target. Color grade locked to the dailies LUT from session 02.",
+  "next_action": "Kick the overnight render, check the seam at frame 1820 — that's where the lens swap is. If it cuts visibly, regrade locally and re-stitch."
+}

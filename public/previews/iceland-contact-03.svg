@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <rect width="800" height="600" fill="#0a0a0b"/>
+  
+    <defs>
+      <radialGradient id="g-iceland-contact-03" cx="50%" cy="50%" r="65%">
+        <stop offset="0%" stop-color="hsla(32,65%,55%,0.51)"/>
+        <stop offset="60%" stop-color="hsla(32,60%,40%,0.23)"/>
+        <stop offset="100%" stop-color="hsla(32,55%,30%,0)"/>
+      </radialGradient>
+    </defs>
+    <circle cx="403" cy="171" r="392" fill="url(#g-iceland-contact-03)" transform="rotate(302 403 171)"/>
+    <line x1="499" y1="264" x2="794" y2="264" stroke="hsla(32,50%,72%,0.18)" stroke-width="1"/>
+    <line x1="500" y1="264" x2="795" y2="264" stroke="hsla(32,50%,72%,0.18)" stroke-width="1"/>
+    <line x1="501" y1="264" x2="796" y2="264" stroke="hsla(32,50%,72%,0.18)" stroke-width="1"/>
+    <line x1="502" y1="264" x2="797" y2="264" stroke="hsla(32,50%,72%,0.18)" stroke-width="1"/>
+    <line x1="503" y1="264" x2="798" y2="264" stroke="hsla(32,50%,72%,0.18)" stroke-width="1"/>
+    <line x1="504" y1="264" x2="799" y2="264" stroke="hsla(32,50%,72%,0.18)" stroke-width="1"/>
+    <line x1="505" y1="264" x2="800" y2="264" stroke="hsla(32,50%,72%,0.18)" stroke-width="1"/>
+    <line x1="506" y1="264" x2="801" y2="264" stroke="hsla(32,50%,72%,0.18)" stroke-width="1"/>
+    <line x1="507" y1="264" x2="802" y2="264" stroke="hsla(32,50%,72%,0.18)" stroke-width="1"/>
+    <line x1="508" y1="264" x2="803" y2="264" stroke="hsla(32,50%,72%,0.18)" stroke-width="1"/>
+    <line x1="308" y1="36" x2="215" y2="36" stroke="hsla(32,50%,72%,-0.06)" stroke-width="1"/>
+    <line x1="309" y1="36" x2="216" y2="36" stroke="hsla(32,50%,72%,-0.06)" stroke-width="1"/>
+    <line x1="310" y1="36" x2="217" y2="36" stroke="hsla(32,50%,72%,-0.06)" stroke-width="1"/>
+    <line x1="311" y1="36" x2="218" y2="36" stroke="hsla(32,50%,72%,-0.06)" stroke-width="1"/>
+    <line x1="312" y1="36" x2="219" y2="36" stroke="hsla(32,50%,72%,-0.06)" stroke-width="1"/>
+    <line x1="313" y1="36" x2="220" y2="36" stroke="hsla(32,50%,72%,-0.06)" stroke-width="1"/>
+    <line x1="357" y1="257" x2="624" y2="257" stroke="hsla(32,60%,75%,0.55)" stroke-width="1.5"/>
+  
+  <rect x="0.5" y="0.5" width="799" height="599" fill="none" stroke="rgba(255,255,255,0.06)"/>
+</svg>

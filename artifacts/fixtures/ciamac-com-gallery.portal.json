@@ -4,6 +4,7 @@
   "arc": "imaging",
   "kind": "page",
   "stage": 5,
+  "preview_image": "/previews/ciamac-com-gallery.svg",
   "preview_url": "https://ciamac.com",
   "repo_path": "~/Developer/ciamac-gallery",
   "folder_path": "~/Developer/ciamac-gallery",

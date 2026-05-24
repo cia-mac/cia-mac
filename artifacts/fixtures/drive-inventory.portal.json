@@ -1,0 +1,10 @@
+{
+  "id": "drive-inventory",
+  "title": "Drive inventory · T7 organize",
+  "arc": "system",
+  "kind": "session",
+  "stage": 3,
+  "folder_path": "~/Inbox/T7-organize",
+  "notes": "178GB on the T7. Roughly: 60GB imaging RAWs, 40GB film dailies, 30GB old project archives, the rest is duplicates and unsorted. The plan: tag-and-prune, not move-and-pray.",
+  "next_action": "Run the dedupe pass first (rmlint), then sort what's left by arc."
+}
