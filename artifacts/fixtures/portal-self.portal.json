@@ -1,13 +1,13 @@
 {
   "id": "portal-self",
-  "title": "Portal · v0 scaffold",
+  "title": "Console · v0 scaffold (local-first)",
   "arc": "system",
   "kind": "study",
   "stage": 2,
   "repo_path": "~/Developer/cia-mac",
   "folder_path": "~/Developer/cia-mac",
   "source_url": "https://github.com/cia-mac/cia-mac/tree/claude/portal-synthesis-lsUou",
-  "notes": "Grid-only home, 6-button bottom bar, sidecar-first registry. Inherits Portal v5 visual contract (dark, centered, Helvetica Neue 300/200/100, Caspian, portal-pulse-soft). No Today card, no Pieces matrix, no tabs. Six buttons: Open Preview, Open Folder, Resume Claude, Audit Build, Exit Ritual, Save for Later. Everything else is a labeled stub.",
-  "last_session_summary": "v0 scaffold pushed: Next.js 15 + plain CSS, sidecar-first, all six buttons wired, CI green.",
-  "next_action": "Drop .portal.json sidecars into 2–3 real ~/Developer/ repos, set PORTAL_ROOTS, and shake out the Audit/Resume/Exit flows for a week before promoting any stubs."
+  "notes": "Local-first Artifact Workbench at http://localhost:8801 on Ciamac's Mac. Path A ratified 2026-05-24: pipeline.ciamac.com is NOT a v0 target. Grid-only home, 6-button bottom bar, sidecar-first registry. Inherits gallery v5 visual contract (dark, centered, Helvetica Neue 300/200/100, Caspian, portal-pulse-soft). No Today card, no Pieces matrix, no tabs. Six buttons: Open Preview, Open Folder, Resume Claude, Audit Build, Exit Ritual, Save for Later. Everything else is a labeled stub. See docs/CONSOLE.md for the local-first decision.",
+  "last_session_summary": "v0.6 audited by Gemini, which caught the deployment-target gap. Path A locked: local-first. Two correctness commits shipped (Iranshahr fix, Phase A Console rename). Build paused pending Ciamac's priority order for next work.",
+  "next_action": "Ratify Path A in chat. Then pick the next-step priority order: (1) docs already landed, (3) Ally workflow audit, (2) auto-discovery decision, (4) first non-fixture artifact, in that recommended sequence."
 }

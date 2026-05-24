@@ -2,7 +2,7 @@
   "name": "ciamac-portal",
   "version": "0.0.1",
   "private": true,
-  "description": "Artifact Workbench attached to Ciamac's AI system",
+  "description": "Local-first Artifact Workbench attached to Ciamac's AI system, running at http://localhost:8801 on his Mac. See docs/CONSOLE.md.",
   "scripts": {
     "dev": "next dev -p 8801",
     "build": "next build",
