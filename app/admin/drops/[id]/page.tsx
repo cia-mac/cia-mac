@@ -35,6 +35,7 @@ export default async function AdminDropPage({ params }: { params: Promise<{ id: 
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Link href={`/admin/drops/${drop.id}/edit`} className="btn-ghost px-3 py-1.5 text-xs">Edit / swap photo</Link>
             <Link href={`/drops/${drop.id}`} className="btn-ghost px-3 py-1.5 text-xs">View as crew</Link>
             <form action={setDropStatusAction}>
               <input type="hidden" name="drop_id" value={drop.id} />

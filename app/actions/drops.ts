@@ -67,6 +67,46 @@ export async function createDropAction(formData: FormData) {
   redirect(`/admin/drops/${dropId}`);
 }
 
+export async function updateDropAction(formData: FormData) {
+  const admin = await requireAdmin();
+  if (!admin) redirect('/login');
+
+  const dropId = Number(formData.get('drop_id'));
+  if (!dropId) throw new Error('Missing drop.');
+
+  const title = String(formData.get('title') || '').trim();
+  const description = String(formData.get('description') || '').trim();
+  const deliveryDate = String(formData.get('delivery_date') || '').trim() || null;
+  const windowStart = String(formData.get('window_start') || '').trim() || null;
+  const windowEnd = String(formData.get('window_end') || '').trim() || null;
+  if (!title) throw new Error('A title is required.');
+
+  // Only replace the photo if a new one was actually uploaded.
+  const newImageUrl = await uploadImage(formData.get('image') as File | null);
+
+  if (newImageUrl) {
+    await sql`
+      UPDATE drops
+      SET title = ${title}, description = ${description}, image_url = ${newImageUrl},
+          delivery_date = ${deliveryDate}, window_start = ${windowStart}, window_end = ${windowEnd}
+      WHERE id = ${dropId}
+    `;
+  } else {
+    await sql`
+      UPDATE drops
+      SET title = ${title}, description = ${description},
+          delivery_date = ${deliveryDate}, window_start = ${windowStart}, window_end = ${windowEnd}
+      WHERE id = ${dropId}
+    `;
+  }
+
+  revalidatePath('/');
+  revalidatePath(`/drops/${dropId}`);
+  revalidatePath('/admin');
+  revalidatePath(`/admin/drops/${dropId}`);
+  redirect(`/admin/drops/${dropId}`);
+}
+
 export async function setDropStatusAction(formData: FormData) {
   const admin = await requireAdmin();
   if (!admin) redirect('/login');

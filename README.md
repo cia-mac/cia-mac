@@ -78,6 +78,23 @@ account. It’s safe to run again later (e.g. after changing your admin password
 Go to `/login`, sign in with `ADMIN_EMAIL` + `ADMIN_PASSWORD`, and you’ll see
 **The Kitchen**. Post your first drop. 🎉
 
+### 9. (Optional) Seed example drops
+Want it pre-filled instead of starting blank? Visit once:
+
+```
+https://YOUR-DEPLOYMENT-URL/api/seed?secret=YOUR_SETUP_SECRET
+```
+
+This creates **today’s Chicken Pesto Sandwich** (open, taking orders) plus
+**Fried Rice** and **Pasta with Chicken** as closed past drops — each with the
+right option groups (protein/egg, sauce, etc.). It only runs when there are no
+drops yet, so it never duplicates.
+
+### The photo workflow
+Post today’s offer with the **ingredients photo**, then when the food’s done,
+swap in the **finished plate**: go to **The Kitchen → the drop → Edit / swap
+photo**, choose the new image, save. (Photos need Blob storage from step 4.)
+
 ---
 
 ## Hooking it up to ciamac.com
