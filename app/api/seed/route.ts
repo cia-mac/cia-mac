@@ -68,14 +68,15 @@ export async function GET(req: Request) {
     {
       title: 'Chicken Pesto Sandwich',
       description:
-        'Toasted baguette, basil pesto, melty cheese, sliced chicken, avocado, cherry tomato and a squeeze of lime.',
+        'Toasted baguette, basil pesto, melty cheese, sliced chicken & salami, green onion, cherry tomato and a drizzle of olive oil + lime.',
       status: 'open',
       deliveryDate: todayISO(),
       windowStart: '12:30 PM',
       windowEnd: '1:30 PM',
       groups: [
+        { name: 'Meat', required: false, multi: true, options: ['Chicken', 'Salami'] },
         { name: 'Cheese', required: true, multi: false, options: ['With cheese', 'No cheese'] },
-        { name: 'Extras', required: false, multi: true, options: ['Avocado', 'Cherry tomato', 'Green onion', 'Extra pesto'] },
+        { name: 'Extras', required: false, multi: true, options: ['Green onion', 'Cherry tomato', 'Avocado', 'Extra pesto'] },
       ],
     },
     {
