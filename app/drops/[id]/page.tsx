@@ -5,6 +5,7 @@ import OrderForm from '@/components/OrderForm';
 import { getCurrentUser } from '@/lib/auth';
 import { getDrop, getDropOptionGroups, getMyOrders } from '@/lib/queries';
 import { cancelOrderAction } from '@/app/actions/orders';
+import { parseDeliveryDate } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,8 +31,9 @@ export default async function DropPage({
   const groups = await getDropOptionGroups(dropId);
   const myOrders = await getMyOrders(dropId, user.id);
 
-  const dateLabel = drop.delivery_date
-    ? new Date(drop.delivery_date + 'T00:00:00').toLocaleDateString(undefined, {
+  const deliveryDate = parseDeliveryDate(drop.delivery_date);
+  const dateLabel = deliveryDate
+    ? deliveryDate.toLocaleDateString(undefined, {
         weekday: 'long',
         month: 'long',
         day: 'numeric',

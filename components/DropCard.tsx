@@ -1,11 +1,13 @@
 import Link from 'next/link';
 import type { Drop } from '@/lib/queries';
+import { parseDeliveryDate } from '@/lib/format';
 
 function windowLabel(d: Drop) {
   const parts: string[] = [];
-  if (d.delivery_date) {
+  const date = parseDeliveryDate(d.delivery_date);
+  if (date) {
     parts.push(
-      new Date(d.delivery_date + 'T00:00:00').toLocaleDateString(undefined, {
+      date.toLocaleDateString(undefined, {
         weekday: 'short',
         month: 'short',
         day: 'numeric',
