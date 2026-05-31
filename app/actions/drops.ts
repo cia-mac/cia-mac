@@ -107,6 +107,48 @@ export async function updateDropAction(formData: FormData) {
   redirect(`/admin/drops/${dropId}`);
 }
 
+/**
+ * Clones an existing drop — title, description, photo, and all option groups —
+ * into a brand-new OPEN drop dated today. Lets you re-post your regulars
+ * (fried rice, pasta, the sandwich) every other day in one tap.
+ */
+export async function repostDropAction(formData: FormData) {
+  const admin = await requireAdmin();
+  if (!admin) redirect('/login');
+
+  const sourceId = Number(formData.get('drop_id'));
+  if (!sourceId) redirect('/admin');
+
+  const src = await sql`SELECT * FROM drops WHERE id = ${sourceId} LIMIT 1`;
+  if (src.rows.length === 0) redirect('/admin');
+  const d = src.rows[0];
+
+  const today = new Date().toISOString().slice(0, 10);
+  const newDrop = await sql`
+    INSERT INTO drops (title, description, image_url, delivery_date, window_start, window_end, status)
+    VALUES (${d.title}, ${d.description}, ${d.image_url}, ${today}, ${d.window_start}, ${d.window_end}, 'open')
+    RETURNING id
+  `;
+  const newId = newDrop.rows[0].id as number;
+
+  const groups = await sql`SELECT * FROM option_groups WHERE drop_id = ${sourceId} ORDER BY sort`;
+  for (const g of groups.rows) {
+    const ng = await sql`
+      INSERT INTO option_groups (drop_id, name, required, multi, sort)
+      VALUES (${newId}, ${g.name}, ${g.required}, ${g.multi}, ${g.sort})
+      RETURNING id
+    `;
+    const opts = await sql`SELECT * FROM options WHERE group_id = ${g.id} ORDER BY sort`;
+    for (const o of opts.rows) {
+      await sql`INSERT INTO options (group_id, name, sort) VALUES (${ng.rows[0].id}, ${o.name}, ${o.sort})`;
+    }
+  }
+
+  revalidatePath('/');
+  revalidatePath('/admin');
+  redirect(`/admin/drops/${newId}`);
+}
+
 export async function setDropStatusAction(formData: FormData) {
   const admin = await requireAdmin();
   if (!admin) redirect('/login');

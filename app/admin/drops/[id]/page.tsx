@@ -3,7 +3,7 @@ import { redirect, notFound } from 'next/navigation';
 import Nav from '@/components/Nav';
 import { requireAdmin } from '@/lib/auth';
 import { getDrop, getOrdersForDrop, getDropTally } from '@/lib/queries';
-import { setDropStatusAction, deleteDropAction } from '@/app/actions/drops';
+import { setDropStatusAction, deleteDropAction, repostDropAction } from '@/app/actions/drops';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +35,10 @@ export default async function AdminDropPage({ params }: { params: Promise<{ id: 
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <form action={repostDropAction}>
+              <input type="hidden" name="drop_id" value={drop.id} />
+              <button className="btn-ghost px-3 py-1.5 text-xs">Repost as today’s</button>
+            </form>
             <Link href={`/admin/drops/${drop.id}/edit`} className="btn-ghost px-3 py-1.5 text-xs">Edit / swap photo</Link>
             <Link href={`/drops/${drop.id}`} className="btn-ghost px-3 py-1.5 text-xs">View as crew</Link>
             <form action={setDropStatusAction}>
