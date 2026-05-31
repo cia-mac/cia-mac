@@ -8,6 +8,9 @@ hold the onion, no mayo, with or without egg. No payment. Just food.
 Built with **Next.js (App Router) + Neon Postgres + Vercel Blob**, designed to
 deploy to **Vercel** in a few minutes.
 
+**[→ Deploy it: import this repo into Vercel](https://vercel.com/new/import?s=https%3A%2F%2Fgithub.com%2Fcia-mac%2Fcia-mac)**
+(then follow steps 3–9 below to add storage + env vars and initialize).
+
 ---
 
 ## What it does
