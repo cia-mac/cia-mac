@@ -3,15 +3,22 @@
 import { useActionState } from 'react';
 import Link from 'next/link';
 import SubmitButton from './SubmitButton';
-import { loginAction, signupAction, type ActionState } from '@/app/actions/auth';
+import { loginAction, signupAction, createFirstAdminAction, type ActionState } from '@/app/actions/auth';
 
-export default function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
-  const action = mode === 'login' ? loginAction : signupAction;
+type Mode = 'login' | 'signup' | 'welcome';
+
+export default function AuthForm({ mode }: { mode: Mode }) {
+  const action =
+    mode === 'login' ? loginAction : mode === 'signup' ? signupAction : createFirstAdminAction;
   const [state, formAction] = useActionState<ActionState, FormData>(action, null);
+
+  const showName = mode === 'signup' || mode === 'welcome';
+  const cta =
+    mode === 'login' ? 'Log in' : mode === 'welcome' ? 'Create my kitchen' : 'Request access';
 
   return (
     <form action={formAction} className="space-y-4">
-      {mode === 'signup' && (
+      {showName && (
         <div>
           <label className="label" htmlFor="name">Name</label>
           <input id="name" name="name" className="input" placeholder="Your name" autoComplete="name" />
@@ -28,8 +35,8 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
           name="password"
           type="password"
           className="input"
-          placeholder={mode === 'signup' ? 'At least 8 characters' : 'Your password'}
-          autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+          placeholder={mode === 'login' ? 'Your password' : 'At least 8 characters'}
+          autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
         />
       </div>
 
@@ -37,17 +44,18 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
         <p className="rounded-xl bg-tomato/10 px-3 py-2 text-sm text-tomato">{state.error}</p>
       )}
 
-      <SubmitButton pendingText={mode === 'signup' ? 'Sending request…' : 'Logging in…'}>
-        {mode === 'signup' ? 'Request access' : 'Log in'}
-      </SubmitButton>
+      <SubmitButton pendingText={mode === 'login' ? 'Logging in…' : 'Setting up…'}>{cta}</SubmitButton>
 
-      <p className="text-center text-sm text-ink/60">
-        {mode === 'login' ? (
-          <>Need an account? <Link href="/signup" className="font-semibold text-tomato">Request access</Link></>
-        ) : (
-          <>Already have access? <Link href="/login" className="font-semibold text-tomato">Log in</Link></>
-        )}
-      </p>
+      {mode === 'login' && (
+        <p className="text-center text-sm text-ink/60">
+          Need an account? <Link href="/signup" className="font-semibold text-tomato">Request access</Link>
+        </p>
+      )}
+      {mode === 'signup' && (
+        <p className="text-center text-sm text-ink/60">
+          Already have access? <Link href="/login" className="font-semibold text-tomato">Log in</Link>
+        </p>
+      )}
     </form>
   );
 }

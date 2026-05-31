@@ -8,10 +8,30 @@ const scryptAsync = promisify(scrypt);
 
 const COOKIE = 'sa_session';
 
-function secretKey() {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret) throw new Error('SESSION_SECRET is not set');
-  return new TextEncoder().encode(secret);
+// The JWT signing secret. Prefers an explicit SESSION_SECRET env var, but if
+// none is set it auto-generates one and stores it in the DB — so the app needs
+// zero configuration to run. Cached per instance; stable across instances
+// because it's read from the shared database.
+let cachedKey: Uint8Array | null = null;
+async function secretKey(): Promise<Uint8Array> {
+  if (cachedKey) return cachedKey;
+
+  if (process.env.SESSION_SECRET) {
+    cachedKey = new TextEncoder().encode(process.env.SESSION_SECRET);
+    return cachedKey;
+  }
+
+  // Insert a fresh secret only if one doesn't exist yet; ON CONFLICT makes this
+  // race-safe across concurrent cold starts, so every instance ends up reading
+  // the same stored value.
+  const candidate = randomBytes(48).toString('hex');
+  await sql`
+    INSERT INTO config (key, value) VALUES ('session_secret', ${candidate})
+    ON CONFLICT (key) DO NOTHING
+  `;
+  const { rows } = await sql`SELECT value FROM config WHERE key = 'session_secret' LIMIT 1`;
+  cachedKey = new TextEncoder().encode(rows[0].value as string);
+  return cachedKey;
 }
 
 // ---- Passwords (scrypt, no native deps) -----------------------------------
@@ -45,7 +65,7 @@ export async function createSession(userId: number) {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('30d')
-    .sign(secretKey());
+    .sign(await secretKey());
 
   const store = await cookies();
   store.set(COOKIE, token, {
@@ -67,7 +87,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, secretKey());
+    const { payload } = await jwtVerify(token, await secretKey());
     const uid = payload.uid as number;
     const { rows } = await sql`
       SELECT id, email, name, role, status FROM users WHERE id = ${uid} LIMIT 1

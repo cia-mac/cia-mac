@@ -39,59 +39,34 @@ deploy to **Vercel** in a few minutes.
 ### 1. Push this repo to GitHub
 It already lives at `cia-mac/cia-mac`. Make sure your branch is pushed.
 
+**Zero configuration.** No secrets to paste, no setup URLs to visit. The app
+creates its own database tables and signing secret on first run, and you create
+your owner account right in the browser. The only thing you must do is connect a
+database.
+
 ### 2. Import into Vercel
 - Go to [vercel.com/new](https://vercel.com/new) and import the repo.
 - Framework preset: **Next.js** (auto-detected). Don’t deploy just yet — add storage first.
 
-### 3. Add a Postgres database (Neon)
+### 3. Add a Postgres database (Neon) — the one required step
 - In your Vercel project → **Storage** → **Create Database** → **Neon (Postgres)**.
-- Connect it to the project. Vercel injects the connection env vars automatically
-  (`DATABASE_URL` / `POSTGRES_URL` — the app reads either).
+- Connect it to the project. Vercel injects `DATABASE_URL` automatically — that’s
+  all the app needs.
 
-### 4. Add Blob storage (for food photos)
-- Same **Storage** tab → **Create** → **Blob**.
-- Connect it. Vercel injects `BLOB_READ_WRITE_TOKEN` automatically.
-- _(If you skip this, the app still works — drops just won’t have photos.)_
+### 4. Add Blob storage (only if you want food photos)
+- Same **Storage** tab → **Create** → **Blob** → connect it (injects `BLOB_READ_WRITE_TOKEN`).
+- _Skip it and everything still works — drops just won’t have photos._
 
-### 5. Set the remaining environment variables
-Project → **Settings** → **Environment Variables**. Add:
+### 5. Deploy
+Hit **Deploy** and wait for it to go green.
 
-| Variable          | Value                                                        |
-| ----------------- | ------------------------------------------------------------ |
-| `SESSION_SECRET`  | a long random string — run `openssl rand -hex 32`            |
-| `SETUP_SECRET`    | another random string (used once to initialize the DB)       |
-| `ADMIN_EMAIL`     | `ciamac.parhizi@gmail.com`                                   |
-| `ADMIN_PASSWORD`  | a strong password for your admin login                       |
-| `ADMIN_NAME`      | `Ciamac` (optional)                                          |
+### 6. Open the site and create your kitchen
+Visit your deployment URL. Because no owner exists yet, you’ll land on a
+**“Set up your kitchen”** screen — enter your name, email, and a password. That
+creates your admin account, logs you in, and pre-fills the menu with today’s
+**Chicken Pesto Sandwich** plus **Fried Rice** and **Pasta** examples. Done. 🎉
 
-### 6. Deploy
-Hit **Deploy**. Wait for it to go green.
-
-### 7. Initialize the database (one time)
-Visit this URL once, replacing the secret with your `SETUP_SECRET`:
-
-```
-https://YOUR-DEPLOYMENT-URL/api/setup?secret=YOUR_SETUP_SECRET
-```
-
-You should see `{"ok":true,...}`. This creates all the tables and your admin
-account. It’s safe to run again later (e.g. after changing your admin password).
-
-### 8. Log in
-Go to `/login`, sign in with `ADMIN_EMAIL` + `ADMIN_PASSWORD`, and you’ll see
-**The Kitchen**. Post your first drop. 🎉
-
-### 9. (Optional) Seed example drops
-Want it pre-filled instead of starting blank? Visit once:
-
-```
-https://YOUR-DEPLOYMENT-URL/api/seed?secret=YOUR_SETUP_SECRET
-```
-
-This creates **today’s Chicken Pesto Sandwich** (open, taking orders) plus
-**Fried Rice** and **Pasta with Chicken** as closed past drops — each with the
-right option groups (protein/egg, sauce, etc.). It only runs when there are no
-drops yet, so it never duplicates.
+> First person to open the site becomes the owner, so open it yourself first.
 
 ### The photo workflow
 Post today’s offer with the **ingredients photo**, then when the food’s done,
@@ -136,19 +111,21 @@ itself a Vercel project, add to its `vercel.json`:
 
 ```bash
 npm install
-cp .env.example .env.local   # fill in DATABASE_URL, SESSION_SECRET, SETUP_SECRET, ADMIN_*
+echo "DATABASE_URL=postgres://..." > .env.local   # a free Neon DB works great
 npm run dev
-# then visit http://localhost:3000/api/setup?secret=YOUR_SETUP_SECRET once
+# open http://localhost:3000 and create your kitchen account
 ```
 
-You’ll need a Postgres connection string in `DATABASE_URL` (a free Neon database
-works great for local dev too).
+`DATABASE_URL` is the only thing you need. Tables and the session secret are
+created automatically on first run.
 
 ## Tech notes
 
+- **Zero config:** schema auto-creates on first query; the JWT signing secret is
+  auto-generated and stored in the DB (override with `SESSION_SECRET` if you like).
 - **Auth:** email + password. Passwords hashed with Node `scrypt`; sessions are
   signed JWTs in an httpOnly cookie (`jose`). No third-party auth service needed.
-- **DB:** `@neondatabase/serverless`. Schema is created idempotently by
-  `/api/setup` (see `lib/db.ts`).
-- **Images:** `@vercel/blob`.
+- **First run:** first visitor creates the owner account (`/welcome`); the menu
+  is seeded with example drops (see `lib/db.ts`).
+- **DB:** `@neondatabase/serverless`. **Images:** `@vercel/blob`.
 - **No payment** anywhere — this is a friends-and-crew internal tool.
