@@ -8,7 +8,7 @@ function connectionString(): string {
     process.env.POSTGRES_URL_NON_POOLING;
   if (!url) {
     throw new Error(
-      'No database connection string found. Set DATABASE_URL (or POSTGRES_URL) — these are injected automatically when you connect a Neon/Postgres store in Vercel.'
+      'No database connection string found. Connect a Neon/Postgres store in Vercel — it injects DATABASE_URL automatically.'
     );
   }
   return url;
@@ -21,11 +21,8 @@ function client(): NeonQueryFunction<false, false> {
   return _client;
 }
 
-/**
- * Tagged-template query helper that mirrors the `{ rows }` shape the rest of the
- * app expects:  const { rows } = await sql`SELECT ...`
- */
-export async function sql(
+/** Raw query — does NOT ensure the schema (used internally by initSchema). */
+async function rawSql(
   strings: TemplateStringsArray,
   ...values: unknown[]
 ): Promise<{ rows: any[] }> {
@@ -33,12 +30,40 @@ export async function sql(
   return { rows };
 }
 
+// The schema is created automatically on the first query of each cold start,
+// so there's no manual "setup" step to run after deploying.
+let schemaPromise: Promise<void> | null = null;
+export function ensureSchema(): Promise<void> {
+  if (!schemaPromise) schemaPromise = initSchema();
+  return schemaPromise;
+}
+
 /**
- * Creates every table the portal needs. Safe to run repeatedly (idempotent).
- * Invoked from /api/setup.
+ * Tagged-template query helper that mirrors the `{ rows }` shape the app
+ * expects, and self-initializes the schema:  const { rows } = await sql`...`
  */
-export async function initSchema() {
-  await sql`
+export async function sql(
+  strings: TemplateStringsArray,
+  ...values: unknown[]
+): Promise<{ rows: any[] }> {
+  await ensureSchema();
+  return rawSql(strings, ...values);
+}
+
+/**
+ * Creates every table the portal needs. Idempotent. Runs automatically via
+ * ensureSchema(); never needs to be called by hand.
+ */
+async function initSchema() {
+  // Tiny key/value table for app config (e.g. the auto-generated session secret).
+  await rawSql`
+    CREATE TABLE IF NOT EXISTS config (
+      key   TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+  `;
+
+  await rawSql`
     CREATE TABLE IF NOT EXISTS users (
       id          SERIAL PRIMARY KEY,
       email       TEXT UNIQUE NOT NULL,
@@ -50,34 +75,34 @@ export async function initSchema() {
     );
   `;
 
-  await sql`
+  await rawSql`
     CREATE TABLE IF NOT EXISTS drops (
       id              SERIAL PRIMARY KEY,
       title           TEXT NOT NULL,
       description     TEXT NOT NULL DEFAULT '',
       image_url       TEXT,
       delivery_date   DATE,
-      window_start    TEXT,    -- free text, e.g. "12:30 PM"
-      window_end      TEXT,    -- free text, e.g. "1:30 PM"
+      window_start    TEXT,
+      window_end      TEXT,
       status          TEXT NOT NULL DEFAULT 'open', -- 'open' | 'closed'
       created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `;
 
   // An option group belongs to a drop, e.g. "Protein" or "Egg".
-  await sql`
+  await rawSql`
     CREATE TABLE IF NOT EXISTS option_groups (
       id          SERIAL PRIMARY KEY,
       drop_id     INTEGER NOT NULL REFERENCES drops(id) ON DELETE CASCADE,
       name        TEXT NOT NULL,
       required    BOOLEAN NOT NULL DEFAULT true,
-      multi       BOOLEAN NOT NULL DEFAULT false,  -- false = pick one, true = pick many (e.g. "hold the onion")
+      multi       BOOLEAN NOT NULL DEFAULT false,  -- false = pick one, true = pick many
       sort        INTEGER NOT NULL DEFAULT 0
     );
   `;
 
   // A choice within a group, e.g. "Chicken", "Shrimp", "No onion".
-  await sql`
+  await rawSql`
     CREATE TABLE IF NOT EXISTS options (
       id          SERIAL PRIMARY KEY,
       group_id    INTEGER NOT NULL REFERENCES option_groups(id) ON DELETE CASCADE,
@@ -86,7 +111,7 @@ export async function initSchema() {
     );
   `;
 
-  await sql`
+  await rawSql`
     CREATE TABLE IF NOT EXISTS orders (
       id                SERIAL PRIMARY KEY,
       drop_id           INTEGER NOT NULL REFERENCES drops(id) ON DELETE CASCADE,
@@ -97,8 +122,7 @@ export async function initSchema() {
     );
   `;
 
-  // The specific options chosen for an order.
-  await sql`
+  await rawSql`
     CREATE TABLE IF NOT EXISTS order_selections (
       id          SERIAL PRIMARY KEY,
       order_id    INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
@@ -106,14 +130,91 @@ export async function initSchema() {
     );
   `;
 
-  await sql`
+  await rawSql`
     CREATE TABLE IF NOT EXISTS feedback (
       id          SERIAL PRIMARY KEY,
       user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       drop_id     INTEGER REFERENCES drops(id) ON DELETE SET NULL,
-      rating      INTEGER,   -- 1..5, optional
+      rating      INTEGER,
       comment     TEXT NOT NULL DEFAULT '',
       created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `;
+}
+
+/** True once the first admin (kitchen owner) account exists. */
+export async function adminExists(): Promise<boolean> {
+  const { rows } = await sql`SELECT 1 FROM users WHERE role = 'admin' LIMIT 1`;
+  return rows.length > 0;
+}
+
+/**
+ * Seeds the example menu the first time an admin is created, so the portal
+ * isn't empty: today's Chicken Pesto Sandwich (open) + Fried Rice and Pasta
+ * (closed past drops). No-op if any drops already exist.
+ */
+export async function seedExampleDrops() {
+  const existing = await sql`SELECT 1 FROM drops LIMIT 1`;
+  if (existing.rows.length > 0) return;
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  const seedDrops = [
+    {
+      title: 'Chicken Pesto Sandwich',
+      description:
+        'Toasted baguette, basil pesto, melty cheese, sliced chicken & salami, green onion, cherry tomato and a drizzle of olive oil + lime.',
+      status: 'open',
+      delivery_date: today,
+      window_start: '12:30 PM',
+      window_end: '1:30 PM',
+      groups: [
+        { name: 'Meat', required: false, multi: true, options: ['Chicken', 'Salami'] },
+        { name: 'Cheese', required: true, multi: false, options: ['With cheese', 'No cheese'] },
+        { name: 'Extras', required: false, multi: true, options: ['Green onion', 'Cherry tomato', 'Avocado', 'Extra pesto'] },
+      ],
+    },
+    {
+      title: 'Fried Rice',
+      description: 'Wok-tossed fried rice in the little takeout boxes.',
+      status: 'closed',
+      delivery_date: null,
+      window_start: null,
+      window_end: null,
+      groups: [
+        { name: 'Protein', required: true, multi: false, options: ['Chicken', 'Shrimp', 'Mix'] },
+        { name: 'Egg', required: true, multi: false, options: ['With egg', 'No egg'] },
+      ],
+    },
+    {
+      title: 'Pasta with Chicken',
+      description: 'Fresh pasta with chicken — pick your sauce.',
+      status: 'closed',
+      delivery_date: null,
+      window_start: null,
+      window_end: null,
+      groups: [{ name: 'Sauce', required: true, multi: false, options: ['Bolognese', 'Pesto', 'Butter & Parmesan'] }],
+    },
+  ];
+
+  for (const d of seedDrops) {
+    const dropRes = await sql`
+      INSERT INTO drops (title, description, image_url, delivery_date, window_start, window_end, status)
+      VALUES (${d.title}, ${d.description}, ${null}, ${d.delivery_date}, ${d.window_start}, ${d.window_end}, ${d.status})
+      RETURNING id
+    `;
+    const dropId = dropRes.rows[0].id as number;
+    for (let g = 0; g < d.groups.length; g++) {
+      const group = d.groups[g];
+      const groupRes = await sql`
+        INSERT INTO option_groups (drop_id, name, required, multi, sort)
+        VALUES (${dropId}, ${group.name}, ${group.required}, ${group.multi}, ${g})
+        RETURNING id
+      `;
+      const groupId = groupRes.rows[0].id as number;
+      for (let o = 0; o < group.options.length; o++) {
+        await sql`INSERT INTO options (group_id, name, sort) VALUES (${groupId}, ${group.options[o]}, ${o})`;
+      }
+    }
+  }
 }

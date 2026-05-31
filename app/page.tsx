@@ -3,12 +3,16 @@ import { redirect } from 'next/navigation';
 import Nav from '@/components/Nav';
 import DropCard from '@/components/DropCard';
 import { getCurrentUser } from '@/lib/auth';
+import { adminExists } from '@/lib/db';
 import { listDrops } from '@/lib/queries';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   const user = await getCurrentUser();
+
+  // Brand-new deployment with no owner yet → first-run setup.
+  if (!user && !(await adminExists())) redirect('/welcome');
 
   // Logged out → landing page.
   if (!user) {
