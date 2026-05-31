@@ -9,18 +9,17 @@ export default function Logo({ className = 'h-8 w-8' }: { className?: string }) 
       aria-label="Starving Artist"
     >
       <rect width="64" height="64" rx="15" fill="#e2553b" />
-      {/* artist's palette = plate */}
-      <ellipse cx="29.5" cy="34" rx="20" ry="16.5" fill="#faf7f2" />
+      {/* painter's palette */}
+      <ellipse cx="30" cy="33" rx="21" ry="17.5" fill="#faf7f2" />
+      {/* a bite out of the top-right edge, like Apple */}
+      <circle cx="50" cy="23" r="8.5" fill="#e2553b" />
       {/* thumb hole */}
-      <circle cx="34" cy="40.5" r="4.3" fill="#e2553b" />
+      <circle cx="33" cy="40" r="4" fill="#e2553b" />
       {/* paint dabs in food colors: pesto, yolk, tomato, ink */}
-      <circle cx="21.5" cy="26" r="3.4" fill="#6b7d4a" />
-      <circle cx="31.5" cy="23" r="3.4" fill="#f0a92b" />
-      <circle cx="40.5" cy="28" r="3.4" fill="#c23b22" />
-      <circle cx="19.5" cy="37" r="3.4" fill="#3a2a22" />
-      {/* fork-brush handle */}
-      <line x1="44" y1="14" x2="33" y2="33" stroke="#3a2a22" strokeWidth="2.4" strokeLinecap="round" />
-      <path d="M44 11.5c2.6 0 4 1.8 3.1 4.2l-1.5 3.9-3.2-1.2 1.5-3.9c.4-1.1.1-3 .1-3z" fill="#3a2a22" />
+      <circle cx="19" cy="27" r="3.3" fill="#6b7d4a" />
+      <circle cx="28" cy="23" r="3.3" fill="#f0a92b" />
+      <circle cx="18" cy="37" r="3.3" fill="#c23b22" />
+      <circle cx="24" cy="40" r="3.3" fill="#3a2a22" />
     </svg>
   );
 }
