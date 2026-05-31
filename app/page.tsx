@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import Nav from '@/components/Nav';
+import Logo from '@/components/Logo';
 import DropCard from '@/components/DropCard';
 import { getCurrentUser } from '@/lib/auth';
 import { adminExists } from '@/lib/db';
@@ -21,7 +22,7 @@ export default async function HomePage() {
         <Nav />
         <main className="mx-auto max-w-3xl px-4">
           <section className="py-16 text-center sm:py-24">
-            <div className="text-6xl">🍳</div>
+            <Logo className="mx-auto h-20 w-20" />
             <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl">Starving Artist</h1>
             <p className="mx-auto mt-4 max-w-xl text-lg text-ink/60">
               Home-cooked food drops for the Wonzimer crew. Every other day I make something good,

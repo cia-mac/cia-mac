@@ -1,0 +1,26 @@
+export default function Logo({ className = 'h-8 w-8' }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 64 64"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Starving Artist"
+    >
+      <rect width="64" height="64" rx="15" fill="#e2553b" />
+      {/* artist's palette = plate */}
+      <ellipse cx="29.5" cy="34" rx="20" ry="16.5" fill="#faf7f2" />
+      {/* thumb hole */}
+      <circle cx="34" cy="40.5" r="4.3" fill="#e2553b" />
+      {/* paint dabs in food colors: pesto, yolk, tomato, ink */}
+      <circle cx="21.5" cy="26" r="3.4" fill="#6b7d4a" />
+      <circle cx="31.5" cy="23" r="3.4" fill="#f0a92b" />
+      <circle cx="40.5" cy="28" r="3.4" fill="#c23b22" />
+      <circle cx="19.5" cy="37" r="3.4" fill="#3a2a22" />
+      {/* fork-brush handle */}
+      <line x1="44" y1="14" x2="33" y2="33" stroke="#3a2a22" strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M44 11.5c2.6 0 4 1.8 3.1 4.2l-1.5 3.9-3.2-1.2 1.5-3.9c.4-1.1.1-3 .1-3z" fill="#3a2a22" />
+    </svg>
+  );
+}
