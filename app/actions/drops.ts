@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { sql } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 import { uploadImage } from '@/lib/blob';
+import { notifyNewDrop } from '@/lib/email';
 
 type IncomingGroup = {
   name: string;
@@ -61,6 +62,9 @@ export async function createDropAction(formData: FormData) {
       `;
     }
   }
+
+  // Tell the crew a fresh drop is live. Safe no-op without a key.
+  await notifyNewDrop(title, dropId);
 
   revalidatePath('/');
   revalidatePath('/admin');
@@ -143,6 +147,9 @@ export async function repostDropAction(formData: FormData) {
       await sql`INSERT INTO options (group_id, name, sort) VALUES (${ng.rows[0].id}, ${o.name}, ${o.sort})`;
     }
   }
+
+  // A repost is "today's drop", so notify the crew here too.
+  await notifyNewDrop(d.title as string, newId);
 
   revalidatePath('/');
   revalidatePath('/admin');
