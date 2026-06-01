@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { sql, adminExists, seedExampleDrops } from '@/lib/db';
 import { hashPassword, verifyPassword, createSession, destroySession } from '@/lib/auth';
+import { notifyAdminNewSignup } from '@/lib/email';
 
 export type ActionState = { error?: string; ok?: string } | null;
 
@@ -56,6 +57,9 @@ export async function signupAction(_prev: ActionState, formData: FormData): Prom
     INSERT INTO users (name, email, password, role, status)
     VALUES (${name}, ${email}, ${hashed}, 'member', 'pending')
   `;
+
+  // Let the kitchen owner know someone is waiting. Safe no-op without a key.
+  await notifyAdminNewSignup(name, email);
 
   redirect('/pending');
 }
