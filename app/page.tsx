@@ -24,6 +24,7 @@ export default async function HomePage() {
           <section className="py-16 text-center sm:py-24">
             <Logo className="mx-auto h-20 w-20" />
             <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl">Starving Artist</h1>
+            <p className="mt-2 text-lg font-semibold italic text-tomato">Feeding the artist.</p>
             <p className="mx-auto mt-4 max-w-xl text-lg text-ink/60">
               Home-cooked food drops for the Wonzimer crew. Every other day I make something good,
               post it here, and you tell me how many you want and how you want it.
