@@ -194,6 +194,43 @@ arrangement maps cleanly onto it:
 
 This makes the DAW track and the browser machine two renders of the **same scene graph**.
 
+### 10a. la-route scene graph — Phase 3 spec (turnkey)
+
+Concrete mapping of the §6 arrangement onto la-route **scenes + crossfade timeline**
+at 128 BPM (1 bar = 1.875 s; 16 bars = 30 s). Build these as 9 scenes; the timeline
+crossfades between them at the durations in the last column.
+
+**Source buffers (load once):**
+- `KICK`, `SUB`, `MIDBASS` (rolling offbeat), `HATS`, `GHOST` (half-time bossa drum loop)
+- `STAB` (Cheshmazar string chord, one hit) · `GRAIN` (texture bed from string tails/breaths)
+- `LEAD` (detuned-saw synth voice) · `RISER` (reversed HOOK)
+- `HOOK` — **user-supplied** Makhloogh vocal chop (never bundled; see §11)
+
+**Scenes (layer = on/level 0–1; blank = off):**
+
+| # | Scene | Time | Bars | KICK | SUB | MIDBASS | HATS | GHOST | STAB | GRAIN | LEAD | HOOK | →xfade |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | INTRO | 0:00 | 0–16 | 1 | | | | | | .6 | | throw | 1 bar |
+| 2 | GROOVE A | 0:30 | 16–48 | 1 | 1 | .7 | .6 | .5 | .6 | .6 | | | 1 bar |
+| 3 | LIFT | 1:30 | 48–64 | 1 | 1 | .8 | .9 | .5 | .7 | .8 | .4 | | 2 bar |
+| 4 | BREAKDOWN | 2:00 | 64–96 | | | | | | .8 | .9 | | **1 dry** | 4 bar |
+| 5 | BUILD | 3:00 | 96–112 | .5↑ | | | roll | | .5 | 1 | | →RISER | 8 bar |
+| 6 | DROP / PEAK | 3:30 | 112–160 | 1 | 1 | 1 | 1 | .7 | .9 | .7 | 1 | call/resp | 1 bar |
+| 7 | STRIP | 5:00 | 160–176 | 1 | 1 | .8 | .7 | .5 | .9 | .6 | | | 2 bar |
+| 8 | LAST LIFT | 5:30 | 176–192 | 1 | 1 | .9 | .9 | .6 | .8 | .8 | .7 | filtered | 2 bar |
+| 9 | OUTRO | 6:00 | 192–208 | 1 | .6 | | | | | .6 | | tail | end |
+
+**Per-scene modulation targets** (la-route should interpolate these across each crossfade,
+not just gate layers — this is the Extrawelt "always moving" rule, §6):
+- `filterCutoff` — low in INTRO/BUILD, opens through LIFT→PEAK.
+- `grainDensity` / `grainPitchSpread` — swell on LIFT and BUILD, peak in BREAKDOWN.
+- `leadDetune` / `delayFeedback` — creep upward toward PEAK.
+- `reverbSize` — large in BREAKDOWN, tight in GROOVE/DROP.
+
+**The two signature transitions** (give these the long crossfades):
+- **3→4 (into BREAKDOWN):** drop KICK/SUB, push GRAIN + reverb, HOOK resolves to full & dry. 4-bar fade.
+- **5→6 (BUILD→DROP):** HOOK dissolves into RISER + grain, filter sweeps open, kick re-enters on the 1. 8-bar fade.
+
 ---
 
 ## 11. Rights / Content-ID
@@ -221,5 +258,5 @@ recording will be **Content-ID matched**. Plan accordingly:
 - [ ] Lay out the 208-bar arrangement (§6)
 - [ ] Automate everything — nothing static 8 bars (§6)
 - [ ] Mix to −6 headroom; master club + streaming (§9)
-- [ ] Optional: port the scene graph into `la-route` (§10)
+- [ ] Phase 3: build the 9-scene graph in `la-route` (§10a), HOOK as user-supplied buffer
 - [ ] Credits + rights plan before any public post (§11)
