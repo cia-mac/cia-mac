@@ -15,9 +15,9 @@ See [feeding it back into la-route](#10-feeding-it-back-into-la-route) at the en
 
 ## 1. North star
 
-A 6–7 minute peak-time-but-emotional techno cut where a **Googoosh vocal/instrumental
-chop is the recurring "human" signal** threaded through an Extrawelt-style organic
-machine. The chop should feel *recognised more than heard* — surfacing in the
+A 6–7 minute peak-time-but-emotional techno cut where a **chop from Googoosh's
+*Makhloogh* (مخلوق) is the recurring "human" signal** threaded through an
+Extrawelt-style organic machine. The chop should feel *recognised more than heard* — surfacing in the
 breakdown, dissolving into Kangding-Ray grain on the build, fully present only once.
 
 Ethos borrowed from the **Randomly Marvelous** doctrine (Notion): elevate the source,
@@ -37,28 +37,43 @@ outclass the official versions, credit the artist generously, and plan for
 
 ---
 
-## 3. Source palette — choosing the Googoosh chop
+## 3. Source — Googoosh, *Makhloogh* (مخلوق)
 
-**Mine your own library first** — pick from records you have clean, ideally
-pre-master/stereo, and where the rhythm section is *sparse* (easier to isolate a
-phrase). The candidate pool below leans on the jazz/bossa/lounge arrangements;
-**verify against your own copies** rather than trusting any single title here.
+**Locked source track.**
 
-**Candidate sources (jazz / bossa / lounge sway):**
-- *Gol Bi Goldoon* (گل بی گلدون) — Varoujan; bossa-leaning sway, nylon guitar.
-- *Mosabeb* (مسبب) — jazzy, brushed kit, walking feel.
-- *Do Panjereh* (دو پنجره) — Cheshmazar; lush, lounge strings.
-- *Gharibeye Ashena* (غریبه آشنا) — orchestral-pop, big emotional vocal.
-- *Pol* (پل), *Talagh* (طلاق), *Jaddeh* (جاده — literally "the road," a nice nod to *la route*).
+| Field | Value |
+|---|---|
+| Title | *Makhloogh* (مخلوق — "Creature / Being") |
+| Composer | Hassan Shamaeezadeh (حسن شماعی‌زاده) |
+| Lyrics | Mansoor Tehrani (منصور تهرانی) |
+| Arranger | **Manouchehr Cheshmazar** (منوچهر چشم‌آذر) |
+| Era | ~1976 (*Pol* era) |
+| Character | Lush Cheshmazar orchestral-pop ballad — dramatic strings, big emotional vocal, mid-tempo. *Not* strict bossa; this is the lounge/orchestral lane, which is **ideal for the Kangding breakdown** (§6, bars 64–96) where the vocal carries the weight. |
 
-> Note on accuracy: treat these as a *starting shortlist*, not gospel — arrangement
-> credits and feel vary by pressing/compilation. Audition for: (a) an isolatable
-> 1–2 bar instrumental phrase, and (b) one dry-ish vocal melisma.
+> Why it fits: the slow, declamatory vocal and the swelling Cheshmazar strings give
+> us a *human* source with built-in drama. We exploit the contrast — keep her
+> ballad **half-time and reverent** under a straight 128 techno machine.
 
-**What to grab from the source (aim for 3 chop types):**
+### 3a. Confirm-by-ear analysis (do this first)
+
+The blueprint's project key/tempo (§4) are the *target*, not the source. Pull these
+from your clean copy of *Makhloogh* before chopping, and fill in:
+
+| Measure | How to get it | Use |
+|---|---|---|
+| **Original key / mode** | Tuner + ear on the sustained vocal notes; note any koron/microtonal bends | Repitch amount → F-min target |
+| **Original tempo** | Tap-tempo the verse; expect a slow ballad (~half-time vs 128) | Warp ratio |
+| **Best vocal phrase** (HOOK) | One 1–2 bar melisma, ideally over a held/sparse bar | §5 HOOK slot |
+| **Best string/chord swell** (STAB + GRAIN) | A bar where strings sustain with little percussion | §5 STAB + GRAIN BED |
+| **Cleanest tail/breath** | Phrase-ends, pre-chorus breaths | §5 GRAIN BED |
+
+> Sibling material if you want a 2nd source layer (same Cheshmazar/Varoujan world):
+> *Do Panjereh*, *Gol Bi Goldoon*, *Gharibeye Ashena*, *Pol*. Keep *Makhloogh* the lead.
+
+**What to grab from *Makhloogh* (aim for 3 chop types):**
 1. **Vocal melisma** — one breathy 1–2 bar phrase with a modal bend in it. This is the hook.
-2. **Harmonic stab** — a Rhodes/guitar/string chord you can loop as the dub-techno stab.
-3. **Texture / room** — tails, breaths, tape hiss, a flute trill — fuel for the Kangding grain bed.
+2. **Harmonic stab** — a Cheshmazar string/orchestral chord you can loop as the dub-techno stab.
+3. **Texture / room** — string tails, breaths, tape hiss — fuel for the Kangding grain bed.
 
 ---
 
@@ -198,7 +213,7 @@ recording will be **Content-ID matched**. Plan accordingly:
 
 ## 12. Build checklist
 
-- [ ] Pick the source record; isolate HOOK / STAB / TEXTURE chops (§3, §5)
+- [ ] Source locked: *Makhloogh*. Run §3a confirm-by-ear analysis, then isolate HOOK / STAB / TEXTURE chops (§5)
 - [ ] Set 128 BPM / F-min session; warp chops, preserve modal bends (§4)
 - [ ] Build kit + sub + rolling bass (§7)
 - [ ] Program lead motif from the vocal's intervals (§7)
