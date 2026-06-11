@@ -5,10 +5,13 @@
 GRAPH pieces from the concept→tool chart — plus website publishing and
 LinkedIn/X distribution.*
 
-> **Note on repo location:** this folder lives in `cia-mac/cia-mac` (the
-> Starving Artist app) only because that's the repo this session was scoped to.
-> The canonical home is `ciamac-gallery-stage/experiments/photon-to-phenomenology/`
-> — move both files there when merging.
+> **Note on repo location:** this lives in `cia-mac/cia-mac` (the Starving
+> Artist app) only because that's the repo this session was scoped to. The
+> pieces sit in `public/photon/` so the Vercel preview serves them at
+> `/photon/` for phone testing and sharing. The canonical home is
+> `ciamac-gallery-stage/experiments/photon-to-phenomenology/` — move
+> `public/photon/` + this file there when merging (or don't merge this PR at
+> all and treat it as a staging area).
 
 ---
 
@@ -31,8 +34,8 @@ build-cost vs. share-ability. Format: **single-file HTML, zero dependencies**
 | # | Piece | Palmer | Why this order |
 |---|-------|--------|----------------|
 | 01 | **Trichromatic mixing** — 3 light sliders → one percept, cone-response readout | §3.2 | Cheapest, pillar 3 of the 3-pillar gate. **Built — v1 in this folder.** |
-| 02 | **Opponent afterimage** — fixate 20 s, image swaps, you see the opponent colour | §3.2 | The viral one. "Stare at this" is the oldest share mechanic on the internet. |
-| 03 | **Figure/ground flip** — Rubin vase / Necker cube, click to flip dominance | §6.3, 6.5 | Trivial build, demonstrates "construction" most directly. |
+| 02 | **Opponent afterimage** — fixate 20 s, image swaps, you see the opponent colour | §3.2 | The viral one. "Stare at this" is the oldest share mechanic on the internet. **Built — v1.** |
+| 03 | **Necker flip** — click to commit an interpretation + measure your own flip rate | §6.5 | Trivial build, demonstrates "construction is mandatory" most directly. **Built — v1.** |
 | 04 | **Receptive field** — drag a stimulus across a center-surround field, watch it fire | §4.1 | First "real neuroscience" piece; the audience-quality filter. |
 | 05 | **Gestalt grouping** — sliders morph proximity ↔ similarity grouping | §6.1 | Designers will share this one; bridges to the design audience. |
 | 06 | **Contrast sensitivity** — Campbell–Robson chart, frequency × contrast sliders | §4.2 | Personal: each viewer literally sees their own visual system's envelope. |
