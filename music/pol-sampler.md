@@ -29,9 +29,9 @@ them — over a simple beat if you want one. the machine does nothing on its own
    deep / swing / techno — set the tempo, mute pieces you don't want. the
    beat never starts by itself. drums are key-neutral so nothing clashes;
    add the bass note only if you want it, and choose the note by ear.
-6. **record:** press **r**. everything you perform — beat, pads, even
-   auditioning the original — is captured to a real WAV in your downloads
-   (`sampler-take-01.wav`). press **r** again to stop and save.
+6. **record:** press **b** (or click ● record). everything you perform —
+   beat, pads, even auditioning the original — is captured to a real WAV in
+   your downloads (`sampler-take-01.wav`). press **b** again to stop and save.
 
 ## the two tools together
 
