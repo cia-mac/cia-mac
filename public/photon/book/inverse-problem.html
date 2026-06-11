@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>One image, many worlds — the inverse problem · Vision Science ch.1</title>
 <style>
-  :root { --bg:#0c0b09; --ink:#e8e0d0; --dim:#8a8378; --faint:#5f5a50; --hair:#221f1a; }
+  :root { --bg:#0c0b09; --ink:#e8e0d0; --dim:#8a8378; --faint:#5f5a50; --hair:#221f1a; --gold:#c9a24b; }
   * { margin:0; padding:0; box-sizing:border-box; }
   html,body { height:100%; }
   body { background:var(--bg); color:var(--ink); font:16px/1.6 -apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; }
@@ -14,32 +14,25 @@
   .crumb a { color:var(--faint); text-decoration:none; }
   .crumb a:hover { color:var(--ink); }
 
-  /* full-bleed stage: the figure is the thing, no boxed canvas */
-  .stage { position:relative; flex:1; min-height:62vh; touch-action:none; cursor:ew-resize; overflow:hidden; }
+  .stage { position:relative; flex:1; min-height:60vh; touch-action:none; cursor:grab; overflow:hidden; }
+  .stage.dragging { cursor:grabbing; }
   canvas { display:block; width:100%; height:100%; }
-  .overlay { position:absolute; left:0; right:0; bottom:0; padding:20px 22px 14px;
-    background:linear-gradient(to top, rgba(12,11,9,0.92), rgba(12,11,9,0)); pointer-events:none; }
+  .overlay { position:absolute; left:0; right:0; bottom:0; padding:18px 22px 14px;
+    background:linear-gradient(to top, rgba(12,11,9,0.94), rgba(12,11,9,0)); pointer-events:none; }
   .headline { font-size:21px; font-weight:600; letter-spacing:-0.01em; }
   .headline .full { color:var(--dim); font-weight:400; font-size:14px; }
-  .read { margin-top:6px; font-size:14px; color:var(--dim); max-width:60ch; min-height:40px; }
+  .read { margin-top:6px; font-size:14px; color:var(--dim); max-width:62ch; min-height:42px; }
   .read em { color:var(--ink); font-style:normal; }
+  .read b { color:var(--gold); font-weight:600; }
 
-  .scrub { position:absolute; left:22px; right:22px; bottom:0; }
-  .hintrow { position:absolute; left:0; right:0; top:14px; display:flex; justify-content:space-between;
-    font:11px/1 ui-monospace,Menlo,monospace; color:var(--faint); padding:0 22px; pointer-events:none; }
-
-  .panel { padding:22px; border-top:1px solid var(--hair); }
+  .panel { padding:20px 22px; border-top:1px solid var(--hair); }
   .panel .lede { font-size:15px; color:var(--dim); max-width:64ch; }
   .panel .lede em { color:var(--ink); font-style:normal; }
   .controls { margin-top:16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
   button { background:none; border:1px solid var(--hair); color:var(--dim); font:13px -apple-system,Helvetica,sans-serif; padding:8px 16px; cursor:pointer; border-radius:2px; }
   button:hover { color:var(--ink); border-color:var(--dim); }
-  .row { display:flex; align-items:center; gap:14px; margin-top:18px; }
-  .row label { font:12px/1 ui-monospace,Menlo,monospace; color:var(--dim); width:88px; }
-  input[type=range]{ -webkit-appearance:none; appearance:none; flex:1; height:2px; background:var(--hair); outline:none; }
-  input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:15px; height:15px; border-radius:50%; background:var(--ink); cursor:pointer; }
-  input[type=range]::-moz-range-thumb{ width:15px; height:15px; border-radius:50%; background:var(--ink); border:none; cursor:pointer; }
-  .note { padding:0 22px 40px; font-size:14px; color:var(--dim); max-width:66ch; }
+  button.active { color:var(--ink); border-color:var(--gold); }
+  .note { padding:18px 22px 40px; font-size:14px; color:var(--dim); max-width:66ch; }
   .note em { color:var(--ink); font-style:normal; }
   .cite { margin-top:14px; font-size:12px; color:var(--faint); }
 </style>
@@ -50,7 +43,6 @@
 
   <div class="stage" id="stage">
     <canvas id="c"></canvas>
-    <div class="hintrow"><span>the eye's view</span><span>drag &nbsp;→&nbsp; move your head</span></div>
     <div class="overlay">
       <div class="headline">One image, many worlds <span class="full">· vision as the inverse problem</span></div>
       <div class="read" id="read"></div>
@@ -58,18 +50,14 @@
   </div>
 
   <div class="panel">
-    <p class="lede">From a single fixed viewpoint — the eye — these three objects cast the <em>same</em> circle on your retina. The retinal image alone cannot tell them apart. Move your head, and the one image splits into three different worlds.</p>
-    <div class="row">
-      <label>viewpoint</label>
-      <input type="range" id="view" min="0" max="1000" value="0">
-    </div>
+    <p class="lede"><em>Drag the object</em> nearer or farther along the line of sight. As it moves, it resizes to stay inside the same cone of light — so the picture on the retina <em>never changes</em>. The eye is handed one image; the object that caused it could be anywhere on that ray.</p>
     <div class="controls">
-      <button id="reset">Return to the eye</button>
-      <button id="sweep">Sweep my head</button>
+      <button id="family">Show the whole family</button>
+      <button id="reset">Reset</button>
     </div>
   </div>
 
-  <p class="note">This is the founding problem of vision, and the spine of the whole book. The world is three-dimensional; the retinal image is two-dimensional. Collapsing 3D to 2D throws away depth, and infinitely many scenes project to any given image — a small near sphere, a large far one, a tilted disc, all the same circle. The image is the <em>effect</em>; the scene is the <em>cause</em>; and recovering a cause from its effect is, mathematically, an inverse problem with no unique solution. Yet you see one definite world, instantly and without effort. Your visual system is not reading the answer off the retina — there is no answer there to read. It is <em>guessing</em>, brilliantly, using assumptions about how the world usually is. <em>Vision is not recording. It is the best-supported guess about what could have caused this image.</em></p>
+  <p class="note">The world is three-dimensional; the retina is a two-dimensional surface. Projecting 3D onto 2D throws depth away, and once depth is gone, infinitely many scenes could have produced the very same image — a small near object and a large far one are indistinguishable on the retina. The image is the <em>effect</em>; the scene is the <em>cause</em>; recovering a cause from its effect is an inverse problem, and it has no unique solution. Yet you see one definite world, instantly. Your visual system is not reading depth off the retina — it isn't there to read. It is <em>inferring</em> the most likely cause, using built-in assumptions about how the world usually is. <em>Vision is not recording. It is the best-supported guess about what could have cast this image.</em></p>
   <p class="cite">Photon to Phenomenology · companion to Palmer, <i>Vision Science: Photons to Phenomenology</i>, §1.2 (the inverse problem) · @ciamac</p>
 </div>
 
@@ -78,7 +66,7 @@
   const cv=document.getElementById('c'), ctx=cv.getContext('2d');
   const stage=document.getElementById('stage');
   const read=document.getElementById('read');
-  const view=document.getElementById('view');
+  const familyBtn=document.getElementById('family');
   let DPR=Math.min(window.devicePixelRatio||1,2), W=0, H=0;
 
   function resize(){
@@ -89,96 +77,140 @@
   }
   window.addEventListener('resize',resize);
 
-  // scene: three objects along the line of sight, same angular size from the eye (origin)
-  const k=0.165;                 // shared angular radius
-  const C={x:0,y:0,z:6};         // centroid we orbit around
-  const objs=[
-    { type:'sphere', z:4.0, label:'a small sphere, near' },
-    { type:'disc',   z:6.0, label:'a flat disc, edge-on hidden' },
-    { type:'sphere', z:8.0, label:'a large sphere, far' }
-  ].map(o=>({ ...o, r:k*o.z }));
+  const ALPHA=0.150;                 // half-angle of the visual cone (rad)
+  const tanA=Math.tan(ALPHA), cosA=Math.cos(ALPHA), sinA=Math.sin(ALPHA);
+  let showFamily=false;
 
-  // current (eased) and target orbit angle
-  let theta=0, thetaT=0;
+  // object distance as a fraction of the cone length; eased
+  let dT=0.30, d=0.30;
 
-  function rotY(p, a, c){
-    const x=p.x-c.x, z=p.z-c.z;
-    return { x:c.x + x*Math.cos(a) + z*Math.sin(a), y:p.y, z:c.z - x*Math.sin(a) + z*Math.cos(a) };
+  function geom(){
+    const midY=H*0.46;
+    const eyeR=Math.max(34, Math.min(W,H)*0.072);
+    const eyeCx=Math.max(70, W*0.15);
+    const Nx=eyeCx+eyeR, Ny=midY;            // nodal point (lens), faces right
+    const dMin=W*0.16, dMax=W*0.80;
+    const retinaX=eyeCx-eyeR*0.78;
+    return {midY,eyeR,eyeCx,Nx,Ny,dMin,dMax,retinaX};
   }
-  function project(p, f, cx, cy){
-    if(p.z<=0.05) return null;
-    return { x:cx + f*p.x/p.z, y:cy - f*p.y/p.z, s:f/p.z };
+
+  function drawEye(g){
+    const {eyeCx,midY,eyeR,Nx,Ny,retinaX}=g;
+    // eyeball
+    ctx.beginPath(); ctx.arc(eyeCx,midY,eyeR,0,7);
+    ctx.fillStyle='rgba(232,224,208,0.05)'; ctx.fill();
+    ctx.strokeStyle='rgba(232,224,208,0.55)'; ctx.lineWidth=1.5; ctx.stroke();
+    // retina (back inner arc)
+    ctx.beginPath(); ctx.arc(eyeCx,midY,eyeR*0.92, Math.PI*0.72, Math.PI*1.28);
+    ctx.strokeStyle='rgba(201,162,75,0.5)'; ctx.lineWidth=3; ctx.stroke();
+    // lens / pupil at nodal point
+    ctx.beginPath(); ctx.ellipse(Nx,Ny, eyeR*0.10, eyeR*0.34, 0, 0, 7);
+    ctx.fillStyle='rgba(232,224,208,0.85)'; ctx.fill();
+    // label
+    ctx.fillStyle='rgba(138,131,120,0.9)'; ctx.font='12px ui-monospace,Menlo,monospace';
+    ctx.textAlign='center'; ctx.fillText('the eye', eyeCx, midY+eyeR+18); ctx.textAlign='left';
+  }
+
+  // retinal image: where the two cone rays land on the back of the eye (constant size)
+  function drawRetinalImage(g){
+    const {Nx,Ny,retinaX}=g;
+    const s=(Nx-retinaX)/cosA;
+    const yTop=Ny + s*sinA, yBot=Ny - s*sinA;   // inverted
+    const xb=Nx - s*cosA;
+    // rays inside the eye (front cone continued through the lens -> inverted on retina)
+    ctx.strokeStyle='rgba(201,162,75,0.45)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(Nx,Ny); ctx.lineTo(xb,yTop); ctx.moveTo(Nx,Ny); ctx.lineTo(xb,yBot); ctx.stroke();
+    ctx.setLineDash([]);
+    // the image itself
+    ctx.strokeStyle='rgba(201,162,75,1)'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(xb,yTop); ctx.lineTo(xb,yBot); ctx.stroke();
+    ctx.fillStyle='rgba(201,162,75,0.95)'; ctx.font='11px ui-monospace,Menlo,monospace';
+    ctx.textAlign='center'; ctx.fillText('retinal image', xb, yBot+16);
+    ctx.fillText('(never changes)', xb, yBot+30); ctx.textAlign='left';
+  }
+
+  function drawCone(g){
+    const {Nx,Ny,dMax}=g;
+    const xEnd=Nx+dMax+W*0.04;
+    const yT=Ny - tanA*(xEnd-Nx), yB=Ny + tanA*(xEnd-Nx);
+    // faint filled cone
+    ctx.beginPath(); ctx.moveTo(Nx,Ny); ctx.lineTo(xEnd,yT); ctx.lineTo(xEnd,yB); ctx.closePath();
+    ctx.fillStyle='rgba(201,162,75,0.06)'; ctx.fill();
+    ctx.strokeStyle='rgba(201,162,75,0.35)'; ctx.lineWidth=1; ctx.stroke();
+  }
+
+  function objAt(g, dist){
+    const {Nx,Ny}=g;
+    return { x:Nx+dist, y:Ny, r:tanA*dist };
+  }
+
+  function drawSphere(o, alpha){
+    const gx=o.x-o.r*0.3, gy=o.y-o.r*0.3;
+    const grd=ctx.createRadialGradient(gx,gy,o.r*0.1, o.x,o.y,o.r);
+    grd.addColorStop(0,`rgba(240,234,220,${0.96*alpha})`);
+    grd.addColorStop(0.7,`rgba(176,168,152,${0.9*alpha})`);
+    grd.addColorStop(1,`rgba(70,66,58,${0.9*alpha})`);
+    ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(o.x,o.y,o.r,0,7); ctx.fill();
   }
 
   function draw(){
-    theta += (thetaT-theta)*0.12;     // eased motion
+    d += (dT-d)*0.14;
     ctx.clearRect(0,0,W,H);
     ctx.fillStyle='#0c0b09'; ctx.fillRect(0,0,W,H);
-    const cx=W*0.5, cy=H*0.46, f=Math.min(W,H)*0.92;
+    const g=geom();
+    const dist=g.dMin + d*(g.dMax-g.dMin);
 
-    // ghost of the shared retinal image — the circle all objects match at the eye
-    ctx.beginPath(); ctx.arc(cx,cy, f*k, 0, 7);
-    ctx.strokeStyle='rgba(201,162,75,0.5)'; ctx.lineWidth=1.5; ctx.setLineDash([5,5]); ctx.stroke(); ctx.setLineDash([]);
+    drawCone(g);
+    drawEye(g);
+    drawRetinalImage(g);
 
-    // rotate + project each object, sort far->near
-    const drawn=objs.map(o=>{
-      const cRot=rotY({x:0,y:0,z:o.z}, theta, C);
-      return { o, cRot, depth:cRot.z };
-    }).sort((a,b)=>b.depth-a.depth);
+    if(showFamily){
+      // the family: every distance is a valid cause -> ghost spheres + a tilted disc
+      [0.18,0.46,0.78,1.0].forEach(fr=>{
+        const o=objAt(g, g.dMin+fr*(g.dMax-g.dMin));
+        drawSphere(o, 0.4);
+      });
+      // a disc candidate at mid-cone (face-on -> same circle; here shown tilted to reveal it)
+      const od=objAt(g, g.dMin+0.62*(g.dMax-g.dMin));
+      ctx.save(); ctx.translate(od.x,od.y); ctx.rotate(-0.5);
+      ctx.beginPath(); ctx.ellipse(0,0, od.r*0.34, od.r, 0, 0, 7);
+      ctx.fillStyle='rgba(201,162,75,0.30)'; ctx.strokeStyle='rgba(201,162,75,0.8)'; ctx.lineWidth=1.5;
+      ctx.fill(); ctx.stroke(); ctx.restore();
+      read.innerHTML='<b>Infinitely many objects</b> fit this one cone of light — near and small, far and large, a tilted disc. Every one casts the identical retinal image. The eye cannot choose between them from the image alone.';
+    } else {
+      const o=objAt(g, dist);
+      // the two tangent rays (object edges back to the lens) — the projection
+      ctx.strokeStyle='rgba(232,224,208,0.30)'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+      ctx.beginPath();
+      ctx.moveTo(g.Nx,g.Ny); ctx.lineTo(o.x, o.y-o.r);
+      ctx.moveTo(g.Nx,g.Ny); ctx.lineTo(o.x, o.y+o.r);
+      ctx.stroke(); ctx.setLineDash([]);
+      drawSphere(o,1);
+      // distance grab handle hint
+      ctx.fillStyle='rgba(138,131,120,0.9)'; ctx.font='12px ui-monospace,Menlo,monospace';
+      ctx.textAlign='center'; ctx.fillText('drag ↔', o.x, o.y+o.r+18); ctx.textAlign='left';
 
-    for(const d of drawn){
-      const pc=project(d.cRot, f, cx, cy);
-      if(!pc) continue;
-      if(d.o.type==='sphere'){
-        const rad=pc.s*d.o.r;
-        const g=ctx.createRadialGradient(pc.x-rad*0.3, pc.y-rad*0.3, rad*0.1, pc.x, pc.y, rad);
-        g.addColorStop(0,'rgba(240,234,220,0.96)');
-        g.addColorStop(0.7,'rgba(180,172,156,0.9)');
-        g.addColorStop(1,'rgba(70,66,58,0.9)');
-        ctx.fillStyle=g; ctx.beginPath(); ctx.arc(pc.x,pc.y,rad,0,7); ctx.fill();
-      } else {
-        // disc rim: a circle in the x-y plane at depth z, facing the eye when theta=0
-        ctx.beginPath();
-        let first=true;
-        for(let i=0;i<=48;i++){
-          const a=i/48*Math.PI*2;
-          const local={ x:d.o.r*Math.cos(a), y:d.o.r*Math.sin(a), z:d.o.z };
-          const pr=rotY(local, theta, C);
-          const pp=project(pr,f,cx,cy);
-          if(!pp){ first=true; continue; }
-          if(first){ ctx.moveTo(pp.x,pp.y); first=false; } else ctx.lineTo(pp.x,pp.y);
-        }
-        ctx.closePath();
-        ctx.fillStyle='rgba(201,162,75,0.30)';
-        ctx.strokeStyle='rgba(201,162,75,0.85)'; ctx.lineWidth=1.5;
-        ctx.fill(); ctx.stroke();
-      }
+      const mult=(dist/g.dMin);
+      read.innerHTML = `This object is <b>${mult.toFixed(1)}×</b> farther and <b>${mult.toFixed(1)}×</b> wider than the nearest case — and the retinal image is <em>exactly the same</em>. Depth is the information the eye threw away.`;
     }
-
-    // eye marker + sightline at left edge cue
-    const t=Math.min(1, theta/0.85);
-    read.innerHTML = t<0.04
-      ? 'You are at the eye. Three objects, <em>one</em> circle — the retina cannot tell which is out there.'
-      : t<0.55
-        ? 'As your head moves, the single circle is coming apart into separate objects at separate depths.'
-        : 'Three different worlds. <em>All</em> of them produced that one identical image at the eye.';
 
     requestAnimationFrame(draw);
   }
 
-  // interaction: drag or slider scrubs the viewpoint; both map to thetaT 0..~0.95
-  function setFromUnit(u){ thetaT = u*0.95; view.value = Math.round(u*1000); }
-  view.addEventListener('input', ()=> thetaT = (+view.value/1000)*0.95);
+  // dragging anywhere horizontally sets the object's distance
+  function setFromX(px){
+    const g=geom();
+    const dist=Math.max(g.dMin, Math.min(g.dMax, px-g.Nx));
+    dT=(dist-g.dMin)/(g.dMax-g.dMin);
+    if(showFamily){ showFamily=false; familyBtn.classList.remove('active'); }
+  }
+  let dragging=false;
+  stage.addEventListener('pointerdown', e=>{ dragging=true; stage.classList.add('dragging'); setFromX(e.offsetX!=null?e.offsetX:e.clientX); stage.setPointerCapture(e.pointerId); });
+  stage.addEventListener('pointermove', e=>{ if(dragging) setFromX(e.offsetX!=null?e.offsetX:e.clientX); });
+  stage.addEventListener('pointerup', ()=>{ dragging=false; stage.classList.remove('dragging'); });
 
-  let dragging=false, startX=0, startU=0;
-  stage.addEventListener('pointerdown', e=>{ dragging=true; startX=e.clientX; startU=thetaT/0.95; stage.setPointerCapture(e.pointerId); });
-  stage.addEventListener('pointermove', e=>{ if(!dragging) return; const dx=(e.clientX-startX)/W; setFromUnit(Math.max(0,Math.min(1,startU+dx*1.3))); });
-  stage.addEventListener('pointerup', ()=> dragging=false);
-
-  document.getElementById('reset').onclick=()=> setFromUnit(0);
-  document.getElementById('sweep').onclick=()=>{
-    let u=0; const id=setInterval(()=>{ u+=0.04; setFromUnit(Math.min(1,u)); if(u>=1) clearInterval(id); },24);
-  };
+  familyBtn.onclick=()=>{ showFamily=!showFamily; familyBtn.classList.toggle('active',showFamily); };
+  document.getElementById('reset').onclick=()=>{ showFamily=false; familyBtn.classList.remove('active'); dT=0.30; };
 
   resize(); requestAnimationFrame(draw);
 })();
