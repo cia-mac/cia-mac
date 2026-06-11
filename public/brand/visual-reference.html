@@ -73,13 +73,11 @@ a:hover { color: var(--accent-glow); }
 @media (max-width: 820px) { .container { padding: 0 var(--pad-side-m); } }
 
 /* ============ the mark ============ */
-/* Barless A — PREVIEW APPROXIMATION ONLY. The production mark must be cut
-   as outlined paths (§ 02.6). Here the crossbar is masked with an ink band,
-   which only works on solid --ink backgrounds. */
+/* Barless A — PREVIEW STAND-IN. The production mark must be cut as outlined
+   paths (§ 02.6). This preview sets the A as Greek capital Lambda (Λ), which
+   in Helvetica Neue is the A glyph without its crossbar. Marks are
+   aria-hidden with sr-only "CIAMAC" alongside where they carry meaning. */
 .mark { font-family: var(--face-text); font-weight: 200; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bone); line-height: 1; }
-.mark .ba { position: relative; display: inline-block; }
-.mark .ba::after { content: ""; position: absolute; left: 29%; width: 42%; top: 63%; height: 12%; background: var(--ink); }
-.on-ink2 .ba::after { background: var(--ink-2); }
 
 /* ============ chrome ============ */
 .top-bar { padding: var(--space-3) 0; border-bottom: 1px solid var(--rule); position: sticky; top: 0; z-index: 10; background: rgba(11,11,12,0.92); backdrop-filter: blur(10px); }
@@ -196,7 +194,7 @@ section { padding: var(--space-12) 0; border-bottom: 1px solid var(--rule); }
 
 <header class="top-bar">
   <div class="container inner">
-    <span class="mark">CI<span class="ba">A</span>M<span class="ba">A</span>C</span>
+    <span class="mark" aria-hidden="true">CIΛMΛC</span><span class="sr-only">CIAMAC</span>
     <nav class="nav-links" aria-label="Sections">
       <a href="#wordmark">Mark</a>
       <a href="#palette">Palette</a>
@@ -224,19 +222,19 @@ section { padding: var(--space-12) 0; border-bottom: 1px solid var(--rule); }
     <div class="container">
       <p class="kicker">§ 02 · Wordmark</p>
       <h2 class="section-head">One mark. Uppercase. Barless A.</h2>
-      <div class="mark-hero mark">CI<span class="ba">A</span>M<span class="ba">A</span>C</div>
-      <p class="note">⚠ barless A approximated with an ink mask for this preview — production mark is cut as outlined paths (§ 02.6). letter-spacing 0.08em provisional.</p>
+      <div class="mark-hero mark" aria-hidden="true">CIΛMΛC</div><span class="sr-only">CIAMAC</span>
+      <p class="note">⚠ barless A previewed with Greek capital Lambda (Λ — the Helvetica A minus its crossbar) — production mark is cut as outlined paths (§ 02.6). letter-spacing 0.08em provisional.</p>
       <div class="mark-sizes">
         <div class="demo">
-          <span class="mark" style="font-size:48px">CI<span class="ba">A</span>M<span class="ba">A</span>C</span>
+          <span class="mark" aria-hidden="true" style="font-size:48px">CIΛMΛC</span>
           <span class="lbl">48px · display minimum</span>
         </div>
         <div class="demo">
-          <span class="mark" style="font-size:20px">CI<span class="ba">A</span>M<span class="ba">A</span>C</span>
+          <span class="mark" aria-hidden="true" style="font-size:20px">CIΛMΛC</span>
           <span class="lbl">20px · chrome minimum</span>
         </div>
         <div class="demo">
-          <span class="mark" style="font-size:9px">CIAMAC</span>
+          <span class="mark" aria-hidden="true" style="font-size:9px">CIΛMΛC</span>
           <span class="lbl">favicon scale · compression accepted</span>
         </div>
       </div>
@@ -309,7 +307,7 @@ section { padding: var(--space-12) 0; border-bottom: 1px solid var(--rule); }
         <div class="comp">
           <span class="lbl">Gallery tile</span>
           <a class="tile" href="#components">
-            <div class="tile-thumb" aria-hidden="true"><span class="mark on-ink" style="font-size:18px;color:var(--bone-3)">CI<span class="ba">A</span>M<span class="ba">A</span>C</span></div>
+            <div class="tile-thumb" aria-hidden="true"><span class="mark" style="font-size:18px;color:var(--bone-3)">CIΛMΛC</span></div>
             <div class="tile-meta">
               <p class="kicker">Film · 2026</p>
               <h3>Title of the work</h3>
@@ -368,7 +366,7 @@ section { padding: var(--space-12) 0; border-bottom: 1px solid var(--rule); }
 
   <footer class="end-card">
     <div class="container">
-      <div class="mark">CI<span class="ba">A</span>M<span class="ba">A</span>C</div>
+      <div class="mark" aria-hidden="true">CIΛMΛC</div><span class="sr-only">CIAMAC</span>
       <p class="s-sm measure">A curated personal archive with functional utility. The door is always open: <a href="mailto:i@ciamac.com">i@ciamac.com</a></p>
       <div class="credits">
         <div class="credits-primary">Ciamac Parhizi</div>
