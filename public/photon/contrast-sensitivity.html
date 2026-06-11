@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The window you see through — contrast sensitivity · Photon to Phenomenology</title>
+<style>
+  :root { --bg:#0c0b09; --ink:#e8e0d0; --dim:#8a8378; --hair:#2a2823; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--ink); font:16px/1.55 -apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif; display:flex; justify-content:center; padding:48px 20px 64px; }
+  main { width:100%; max-width:680px; }
+  h1 { font-size:22px; font-weight:600; letter-spacing:-0.01em; }
+  .sub { color:var(--dim); margin-top:6px; font-size:14px; }
+  canvas { display:block; width:100%; margin:28px 0 4px; border:1px solid var(--hair); image-rendering:auto; }
+  .axes { display:flex; justify-content:space-between; font:12px/1 ui-monospace,"SF Mono",Menlo,monospace; color:var(--dim); margin-bottom:2px; }
+  .yhint { font:12px/1 ui-monospace,Menlo,monospace; color:var(--dim); margin-top:8px; }
+  .controls { margin-top:18px; display:grid; gap:14px; }
+  .row { display:grid; grid-template-columns:150px 1fr 64px; align-items:center; gap:14px; }
+  .row label { font-size:14px; }
+  .row .val { font:13px/1 ui-monospace,"SF Mono",Menlo,monospace; color:var(--dim); text-align:right; }
+  input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--hair); outline:none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:14px; height:14px; border-radius:50%; background:var(--ink); cursor:pointer; }
+  input[type=range]::-moz-range-thumb { width:14px; height:14px; border-radius:50%; background:var(--ink); border:none; cursor:pointer; }
+  .note { margin-top:28px; font-size:14px; color:var(--dim); border-top:1px solid var(--hair); padding-top:18px; }
+  .note em { color:var(--ink); font-style:normal; }
+  .cite { margin-top:14px; font-size:12px; color:var(--dim); }
+</style>
+</head>
+<body>
+<main>
+  <h1>The window you see through</h1>
+  <p class="sub">Stripes that get finer left-to-right and fainter bottom-to-top. The arch where they vanish is not in the image — it is the literal shape of your vision. Lean back; it moves.</p>
+
+  <div class="axes"><span>← coarse</span><span>spatial frequency</span><span>fine →</span></div>
+  <canvas id="c" width="900" height="480"></canvas>
+  <div class="yhint">↑ high contrast at the bottom · low contrast at the top</div>
+
+  <div class="controls">
+    <div class="row">
+      <label>Overall contrast</label>
+      <input type="range" id="gain" min="20" max="160" value="100">
+      <span class="val" id="gainv"></span>
+    </div>
+  </div>
+
+  <p class="note">Every column has the same stripes; every row has the same contrast. If you were a camera, the boundary between visible and invisible would be a straight horizontal line — a fixed contrast threshold. It isn't. You see an inverted arch: stripes too fine or too coarse disappear even at high contrast, while mid-frequencies stay visible far up into the faint zone. That arch is your contrast sensitivity function, peaking near where a face's features sit. Step back and the whole arch slides right. <em>You are not seeing the chart — you are seeing the limits of the instrument that sees it.</em></p>
+  <p class="cite">Photon to Phenomenology · after Palmer, <i>Vision Science: Photons to Phenomenology</i>, §4.2 (contrast sensitivity; Campbell & Robson 1968) · @ciamac</p>
+
+<script>
+(function(){
+  const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+  const W=cv.width, H=cv.height;
+  const gain=document.getElementById('gain'), gainv=document.getElementById('gainv');
+  const img=ctx.createImageData(W,H);
+
+  function draw(){
+    const g=+gain.value/100;
+    gainv.textContent=Math.round(g*100)+'%';
+    const data=img.data;
+    const base=128;
+    for(let x=0;x<W;x++){
+      // frequency rises exponentially with x
+      const freq=Math.exp(x/W*4.4)*0.45;     // cycles scaling
+      const phase=Math.sin(x/W*Math.PI*2*freq* (W/40));
+      for(let y=0;y<H;y++){
+        // contrast rises exponentially toward the bottom
+        const c=Math.pow(1-(y/H),3.0)*g;     // 0 at top -> g at bottom
+        const lum=base+base*c*phase;
+        const i=(y*W+x)*4;
+        const v=lum<0?0:lum>255?255:lum;
+        // tint toward the cream/black register instead of pure grey
+        data[i]=v; data[i+1]=v*0.97+2; data[i+2]=v*0.9; data[i+3]=255;
+      }
+    }
+    ctx.putImageData(img,0,0);
+  }
+  gain.addEventListener('input',draw);
+  draw();
+})();
+</script>
+</main>
+</body>
+</html>

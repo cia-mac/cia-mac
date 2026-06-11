@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A cell that watches one spot — receptive fields · Photon to Phenomenology</title>
+<style>
+  :root { --bg:#0c0b09; --ink:#e8e0d0; --dim:#8a8378; --hair:#2a2823; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--ink); font:16px/1.55 -apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif; display:flex; justify-content:center; padding:48px 20px 64px; }
+  main { width:100%; max-width:680px; }
+  h1 { font-size:22px; font-weight:600; letter-spacing:-0.01em; }
+  .sub { color:var(--dim); margin-top:6px; font-size:14px; }
+  canvas { display:block; width:100%; margin:28px 0 8px; border:1px solid var(--hair); touch-action:none; cursor:crosshair; }
+  .controls { margin-top:18px; display:grid; gap:14px; }
+  .row { display:grid; grid-template-columns:120px 1fr 52px; align-items:center; gap:14px; }
+  .row label { font-size:14px; }
+  .row .val { font:13px/1 ui-monospace,"SF Mono",Menlo,monospace; color:var(--dim); text-align:right; }
+  input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--hair); outline:none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:14px; height:14px; border-radius:50%; background:var(--ink); cursor:pointer; }
+  input[type=range]::-moz-range-thumb { width:14px; height:14px; border-radius:50%; background:var(--ink); border:none; cursor:pointer; }
+  .controls .check { display:flex; gap:10px; align-items:center; font-size:14px; color:var(--dim); }
+  .readout { margin-top:24px; border-top:1px solid var(--hair); padding-top:18px; }
+  .readout h2 { font-size:12px; font-weight:500; color:var(--dim); text-transform:uppercase; letter-spacing:.08em; margin-bottom:12px; }
+  .fire { display:grid; grid-template-columns:1fr 64px; align-items:center; gap:14px; }
+  .fire .bar { height:8px; background:var(--hair); position:relative; }
+  .fire .bar i { position:absolute; inset:0 auto 0 0; background:var(--ink); transition:width .05s linear; }
+  .fire .num { font:13px/1 ui-monospace,"SF Mono",Menlo,monospace; color:var(--dim); text-align:right; }
+  .verdict { margin-top:12px; font-size:14px; color:var(--ink); min-height:22px; }
+  .note { margin-top:32px; font-size:14px; color:var(--dim); border-top:1px solid var(--hair); padding-top:18px; }
+  .note em { color:var(--ink); font-style:normal; }
+  .cite { margin-top:14px; font-size:12px; color:var(--dim); }
+</style>
+</head>
+<body>
+<main>
+  <h1>A cell that watches one spot</h1>
+  <p class="sub">One retinal ganglion cell. Its centre says "light here, fire"; its surround says "light here, hush". Drag the spotlight across the field and watch when the cell actually cares.</p>
+
+  <canvas id="c" width="900" height="560"></canvas>
+
+  <div class="controls">
+    <div class="row">
+      <label>Spot size</label>
+      <input type="range" id="size" min="8" max="220" value="48">
+      <span class="val" id="sizev"></span>
+    </div>
+    <div class="check">
+      <input type="checkbox" id="flood">
+      <label for="flood">Flood the whole field with even light</label>
+    </div>
+  </div>
+
+  <div class="readout">
+    <h2>Firing rate</h2>
+    <div class="fire">
+      <span class="bar"><i id="fbar"></i></span>
+      <span class="num" id="fnum"></span>
+    </div>
+    <p class="verdict" id="verdict"></p>
+  </div>
+
+  <p class="note">Drop a small spot dead-centre and the cell roars. Grow it until it spills into the surround and the firing collapses. Flood the field evenly — bright everywhere — and the cell goes nearly silent. The neuron does not report how much light there is; it reports <em>differences</em> in light across space. Before any "image" exists, the retina has already thrown away absolute brightness and kept only contrast. <em>Seeing begins by discarding most of what the photons carry.</em></p>
+  <p class="cite">Photon to Phenomenology · after Palmer, <i>Vision Science: Photons to Phenomenology</i>, §4.1 (centre-surround receptive fields; Kuffler 1953) · @ciamac</p>
+
+<script>
+(function(){
+  const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+  const W=cv.width, H=cv.height, cx=W/2, cy=H/2;
+  const Rc=70, Rs=150;            // centre / surround radii (visual guide)
+  const sigC=Rc*0.55, sigS=Rs*0.6;
+  const sizeEl=document.getElementById('size'), sizev=document.getElementById('sizev');
+  const flood=document.getElementById('flood');
+  const fbar=document.getElementById('fbar'), fnum=document.getElementById('fnum'), verdict=document.getElementById('verdict');
+
+  let mx=cx, my=cy-10;
+
+  // precompute DOG weights on a sample grid over the field
+  const step=6, samples=[];
+  let posSum=0;
+  for(let y=cy-Rs;y<=cy+Rs;y+=step){
+    for(let x=cx-Rs;x<=cx+Rs;x+=step){
+      const r2=(x-cx)*(x-cx)+(y-cy)*(y-cy);
+      if(r2>Rs*Rs) continue;
+      const c=Math.exp(-r2/(2*sigC*sigC));
+      const s=Math.exp(-r2/(2*sigS*sigS));
+      const w=c-0.55*s;            // difference of Gaussians
+      samples.push({x,y,w});
+      if(w>0) posSum+=w;
+    }
+  }
+
+  function response(){
+    if(flood.checked){
+      // even light everywhere -> sum of all weights (~0 by DOG balance)
+      let s=0; for(const p of samples) s+=p.w;
+      return s/posSum;
+    }
+    const r=+sizeEl.value;
+    let s=0;
+    for(const p of samples){
+      const d2=(p.x-mx)*(p.x-mx)+(p.y-my)*(p.y-my);
+      if(d2<=r*r) s+=p.w;
+    }
+    return s/posSum;            // ~1 when spot fills centre only
+  }
+
+  function draw(){
+    sizev.textContent=sizeEl.value+'px';
+    ctx.fillStyle='#0c0b09'; ctx.fillRect(0,0,W,H);
+
+    // field guide rings
+    ctx.strokeStyle='#2a2823'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(cx,cy,Rs,0,7); ctx.stroke();
+    // surround (inhibitory) faint
+    const gs=ctx.createRadialGradient(cx,cy,Rc,cx,cy,Rs);
+    gs.addColorStop(0,'rgba(232,224,208,0)'); gs.addColorStop(1,'rgba(120,90,90,0.10)');
+    ctx.fillStyle=gs; ctx.beginPath(); ctx.arc(cx,cy,Rs,0,7); ctx.fill();
+    // centre (excitatory) faint
+    const gc=ctx.createRadialGradient(cx,cy,0,cx,cy,Rc);
+    gc.addColorStop(0,'rgba(232,224,208,0.16)'); gc.addColorStop(1,'rgba(232,224,208,0)');
+    ctx.fillStyle=gc; ctx.beginPath(); ctx.arc(cx,cy,Rc,0,7); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx,cy,Rc,0,7); ctx.strokeStyle='#3a382f'; ctx.stroke();
+
+    // labels
+    ctx.fillStyle='#8a8378'; ctx.font='12px ui-monospace,Menlo,monospace';
+    ctx.fillText('+ centre',cx-26,cy-Rc-8);
+    ctx.fillText('– surround',cx-34,cy+Rs+18);
+
+    // stimulus
+    if(flood.checked){
+      ctx.fillStyle='rgba(232,224,208,0.22)'; ctx.fillRect(0,0,W,H);
+    }else{
+      const r=+sizeEl.value;
+      const g=ctx.createRadialGradient(mx,my,0,mx,my,r);
+      g.addColorStop(0,'rgba(245,240,228,0.95)'); g.addColorStop(1,'rgba(245,240,228,0.0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(mx,my,r,0,7); ctx.fill();
+    }
+
+    // firing
+    const raw=response();
+    const rate=Math.max(0,Math.min(1,raw));      // 0..1 for the bar
+    fbar.style.width=(rate*100).toFixed(0)+'%';
+    fnum.textContent=Math.round(rate*120)+' Hz';
+    verdict.textContent =
+      flood.checked ? 'Even light, centre and surround cancel — the cell barely responds. It is blind to overall brightness.' :
+      raw>0.8 ? 'Spot fits the centre — the cell fires hard. This is its preferred stimulus.' :
+      raw>0.4 ? 'Some centre, some surround — partial response.' :
+      raw>0.12 ? 'Mostly off-centre or spilling into the surround — weak firing.' :
+      'Spot is in the surround or covers both — inhibition cancels excitation.';
+  }
+
+  function pos(e){
+    const r=cv.getBoundingClientRect();
+    const t=e.touches?e.touches[0]:e;
+    mx=(t.clientX-r.left)*(W/r.width);
+    my=(t.clientY-r.top)*(H/r.height);
+    draw();
+  }
+  cv.addEventListener('mousemove',pos);
+  cv.addEventListener('touchmove',e=>{e.preventDefault();pos(e);},{passive:false});
+  cv.addEventListener('touchstart',e=>{e.preventDefault();pos(e);},{passive:false});
+  sizeEl.addEventListener('input',draw);
+  flood.addEventListener('change',draw);
+  draw();
+})();
+</script>
+</main>
+</body>
+</html>
