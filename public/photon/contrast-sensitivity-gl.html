@@ -92,8 +92,8 @@
       float freq = exp(x * 4.4) * 0.45 * uFreqAmt;
       float cycles = freq * (uRes.x / 40.0);
       float phase = sin(x * 6.28318 * cycles);
-      // contrast: high at bottom (y=0), low at top
-      float contrast = pow(y, 3.0) * uGain;   // note: gl y=0 at bottom
+      // contrast: high at bottom (gl y=0), low at top (gl y=1)
+      float contrast = pow(1.0 - y, 3.0) * uGain;
       float lum = 0.5 + 0.5 * contrast * phase;
       vec3 col = vec3(lum) * vec3(1.0, 0.985, 0.92);   // toward cream register
 
@@ -102,10 +102,9 @@
       float peak = 1.9;                      // peak sensitivity frequency (log2)
       float bw = 1.35;                       // bandwidth
       float sens = exp(-pow((lf - peak)/bw, 2.0));   // 0..1
-      float threshold = 1.0 - sens;          // higher freq-extremes need more contrast
-      // arch line: where available contrast (1-y, i.e. distance from bottom) ~ threshold
-      float availLow = (1.0 - y);            // 0 at bottom .. 1 at top
-      float archLine = smoothstep(0.012, 0.0, abs(availLow - threshold*0.9));
+      float threshold = 1.0 - sens;          // freq extremes need more contrast
+      // arch contour: where the available contrast at this row crosses threshold
+      float archLine = smoothstep(0.02, 0.0, abs(contrast - threshold));
       col = mix(col, vec3(0.91,0.36,0.30), archLine * uArch);
 
       gl_FragColor = vec4(col, 1.0);
