@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two cubes in one drawing — multistability · Photon to Phenomenology</title>
+<style>
+  :root {
+    --bg: #0c0b09;
+    --ink: #e8e0d0;
+    --dim: #8a8378;
+    --hair: #2a2823;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.55 -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 48px 20px 64px;
+  }
+  main { width: 100%; max-width: 680px; }
+  h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .sub { color: var(--dim); margin-top: 6px; font-size: 14px; }
+
+  .stage {
+    margin: 28px 0 0;
+    border: 1px solid var(--hair);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  svg { display: block; width: 100%; max-width: 460px; height: auto; }
+  .edge { stroke: var(--ink); stroke-width: 2; fill: none; }
+  .face { fill: var(--ink); opacity: 0; transition: opacity 0.15s; }
+  .face.on { opacity: 0.14; }
+  .fixdot { fill: var(--ink); }
+
+  .prompt { margin-top: 10px; min-height: 44px; font-size: 14px; color: var(--dim); }
+  .prompt em { color: var(--ink); font-style: normal; }
+
+  .controls { margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; }
+  button {
+    background: none;
+    border: 1px solid var(--hair);
+    color: var(--dim);
+    font: 13px -apple-system, Helvetica, sans-serif;
+    padding: 7px 16px;
+    cursor: pointer;
+  }
+  button:hover:not(:disabled) { color: var(--ink); border-color: var(--dim); }
+  button.active, button.primary { color: var(--ink); border-color: var(--dim); }
+  button:disabled { opacity: 0.4; cursor: default; }
+
+  .exp {
+    margin-top: 26px;
+    border-top: 1px solid var(--hair);
+    padding-top: 18px;
+  }
+  .exp h2 { font-size: 12px; font-weight: 500; color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; }
+  .exp p { font-size: 14px; color: var(--dim); margin-top: 8px; }
+  .exp .stats { font: 13px/1.6 ui-monospace, "SF Mono", Menlo, monospace; color: var(--ink); margin-top: 10px; min-height: 22px; }
+  .exprow { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+  .exprow .timer { font: 13px/1 ui-monospace, "SF Mono", Menlo, monospace; color: var(--dim); }
+
+  .note { margin-top: 32px; font-size: 14px; color: var(--dim); border-top: 1px solid var(--hair); padding-top: 18px; }
+  .note em { color: var(--ink); font-style: normal; }
+  .cite { margin-top: 14px; font-size: 12px; color: var(--dim); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Two cubes in one drawing</h1>
+  <p class="sub">Twelve lines, no depth information at all. Your visual system refuses to see it that way — it builds a cube, commits to one of two, and flips between them.</p>
+
+  <div class="stage" id="stage" title="Click to flip the interpretation">
+    <svg viewBox="0 0 460 360" aria-label="Necker cube">
+      <!-- front-low-left square: A; back-high-right square: B -->
+      <polygon id="faceA" class="face" points="130,130 290,130 290,290 130,290"/>
+      <polygon id="faceB" class="face" points="200,70 360,70 360,230 200,230"/>
+      <g class="edge">
+        <polygon points="130,130 290,130 290,290 130,290" fill="none"/>
+        <polygon points="200,70 360,70 360,230 200,230" fill="none"/>
+        <line x1="130" y1="130" x2="200" y2="70"/>
+        <line x1="290" y1="130" x2="360" y2="70"/>
+        <line x1="290" y1="290" x2="360" y2="230"/>
+        <line x1="130" y1="290" x2="200" y2="230"/>
+      </g>
+      <circle class="fixdot" cx="245" cy="180" r="3"/>
+    </svg>
+  </div>
+  <p class="prompt" id="prompt">Click the drawing: the shaded face becomes the <em>front</em>, and the whole cube reorients. Same twelve lines each time.</p>
+
+  <div class="controls">
+    <button id="bA">Viewed from above</button>
+    <button id="bB">Viewed from below</button>
+    <button id="bN" class="active">Ambiguous</button>
+  </div>
+
+  <div class="exp">
+    <h2>Self-experiment — your flip rate</h2>
+    <p>Leave it ambiguous, stare at the dot, and tap the button (or spacebar) every time the cube reverses on its own. Thirty seconds.</p>
+    <div class="exprow">
+      <button id="run" class="primary">Start 30s</button>
+      <button id="flip" disabled>It flipped</button>
+      <span class="timer" id="etimer"></span>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+
+  <p class="note">The retinal image is identical in every case — a flat line drawing. The depth, the orientation, the "front" face: none of it is in the stimulus. Your visual system constructs a 3D object from 2D evidence, and when the evidence supports two objects equally, it alternates between whole interpretations rather than settling on the flat truth. <em>You cannot choose to see it as twelve flat lines — construction is mandatory.</em></p>
+  <p class="cite">Photon to Phenomenology · after Palmer, <i>Vision Science: Photons to Phenomenology</i>, §6.5 (multistability; Necker 1832) · @ciamac</p>
+
+<script>
+(function () {
+  const faceA = document.getElementById('faceA');
+  const faceB = document.getElementById('faceB');
+  const bA = document.getElementById('bA');
+  const bB = document.getElementById('bB');
+  const bN = document.getElementById('bN');
+  const stage = document.getElementById('stage');
+  const prompt = document.getElementById('prompt');
+
+  // 'A' = lower-left face in front (cube seen from above), 'B' = upper-right in front (from below)
+  let state = 'N';
+
+  function setState(s) {
+    state = s;
+    faceA.classList.toggle('on', s === 'A');
+    faceB.classList.toggle('on', s === 'B');
+    bA.classList.toggle('active', s === 'A');
+    bB.classList.toggle('active', s === 'B');
+    bN.classList.toggle('active', s === 'N');
+    prompt.innerHTML =
+      s === 'A' ? 'The near-left face is in front — you are looking <em>down</em> onto the cube.' :
+      s === 'B' ? 'The far-right face is in front — you are looking <em>up</em> at it from below.' :
+      'No commitment from the drawing. Stare at the dot and your visual system will commit anyway — then change its mind.';
+  }
+
+  stage.addEventListener('click', () => setState(state === 'A' ? 'B' : 'A'));
+  bA.addEventListener('click', () => setState('A'));
+  bB.addEventListener('click', () => setState('B'));
+  bN.addEventListener('click', () => setState('N'));
+
+  // flip-rate experiment
+  const run = document.getElementById('run');
+  const flip = document.getElementById('flip');
+  const etimer = document.getElementById('etimer');
+  const stats = document.getElementById('stats');
+  let flips = 0, remaining = 0, t = null, active = false;
+
+  function endRun() {
+    clearInterval(t);
+    active = false;
+    flip.disabled = true;
+    run.disabled = false;
+    etimer.textContent = '';
+    const perMin = (flips * 2);
+    stats.textContent = flips === 0
+      ? 'No flips reported. Try relaxing your gaze on the dot — do not force it.'
+      : flips + ' flips in 30s — about ' + perMin + ' reversals/min. Typical observers report 5–20/min, and the rate climbs the longer you watch.';
+  }
+
+  run.addEventListener('click', () => {
+    setState('N');
+    flips = 0; remaining = 30; active = true;
+    stats.textContent = '';
+    run.disabled = true;
+    flip.disabled = false;
+    etimer.textContent = '30s';
+    t = setInterval(() => {
+      remaining--;
+      etimer.textContent = remaining + 's';
+      if (remaining <= 0) endRun();
+    }, 1000);
+  });
+
+  function reportFlip() {
+    if (!active) return;
+    flips++;
+    flip.textContent = 'It flipped · ' + flips;
+  }
+  flip.addEventListener('click', reportFlip);
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space' && active) { e.preventDefault(); reportFlip(); }
+  });
+
+  setState('N');
+})();
+</script>
+</main>
+</body>
+</html>

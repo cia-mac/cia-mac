@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The window you see through — contrast sensitivity (WebGL) · Photon to Phenomenology</title>
+<style>
+  :root { --bg:#0c0b09; --ink:#e8e0d0; --dim:#8a8378; --hair:#2a2823; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--ink); font:16px/1.55 -apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif; display:flex; justify-content:center; padding:48px 20px 64px; }
+  main { width:100%; max-width:680px; }
+  h1 { font-size:22px; font-weight:600; letter-spacing:-0.01em; }
+  .sub { color:var(--dim); margin-top:6px; font-size:14px; }
+  .axes { display:flex; justify-content:space-between; font:12px/1 ui-monospace,"SF Mono",Menlo,monospace; color:var(--dim); margin:28px 0 2px; }
+  .canvaswrap { position:relative; border:1px solid var(--hair); }
+  canvas { display:block; width:100%; height:auto; }
+  .fallback { display:none; padding:40px 20px; text-align:center; color:var(--dim); font-size:14px; }
+  .yhint { font:12px/1 ui-monospace,Menlo,monospace; color:var(--dim); margin-top:8px; }
+  .controls { margin-top:18px; display:grid; gap:14px; }
+  .row { display:grid; grid-template-columns:150px 1fr 64px; align-items:center; gap:14px; }
+  .row label { font-size:14px; }
+  .row .val { font:13px/1 ui-monospace,"SF Mono",Menlo,monospace; color:var(--dim); text-align:right; }
+  input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--hair); outline:none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:14px; height:14px; border-radius:50%; background:var(--ink); cursor:pointer; }
+  input[type=range]::-moz-range-thumb { width:14px; height:14px; border-radius:50%; background:var(--ink); border:none; cursor:pointer; }
+  .check { display:flex; gap:10px; align-items:center; font-size:14px; color:var(--dim); }
+  .note { margin-top:28px; font-size:14px; color:var(--dim); border-top:1px solid var(--hair); padding-top:18px; }
+  .note em { color:var(--ink); font-style:normal; }
+  .badge { display:inline-block; font:11px/1 ui-monospace,Menlo,monospace; color:var(--dim); border:1px solid var(--hair); padding:3px 7px; border-radius:3px; margin-left:8px; vertical-align:middle; }
+  .cite { margin-top:14px; font-size:12px; color:var(--dim); }
+</style>
+</head>
+<body>
+<main>
+  <h1>The window you see through <span class="badge">WebGL</span></h1>
+  <p class="sub">Stripes that get finer left-to-right and fainter bottom-to-top, drawn per-pixel on the GPU. The arch where they vanish is not in the image — it is the literal shape of your vision. Lean back; it moves.</p>
+
+  <div class="axes"><span>← coarse</span><span>spatial frequency</span><span>fine →</span></div>
+  <div class="canvaswrap">
+    <canvas id="c" width="1600" height="840"></canvas>
+    <div class="fallback" id="fallback">Your browser blocked WebGL — this piece needs it. Try another browser.</div>
+  </div>
+  <div class="yhint">↑ high contrast at the bottom · low contrast at the top</div>
+
+  <div class="controls">
+    <div class="row">
+      <label>Overall contrast</label>
+      <input type="range" id="gain" min="20" max="160" value="100">
+      <span class="val" id="gainv"></span>
+    </div>
+    <div class="row">
+      <label>Frequency range</label>
+      <input type="range" id="freq" min="40" max="160" value="100">
+      <span class="val" id="freqv"></span>
+    </div>
+    <div class="check">
+      <input type="checkbox" id="csf">
+      <label for="csf">Trace the sensitivity arch (the edge of your own vision)</label>
+    </div>
+  </div>
+
+  <p class="note">Every column has the same stripes; every row the same contrast. A camera's limit would be a flat horizontal line — a fixed threshold. Yours isn't: you see an inverted arch, because mid-range frequencies are where your visual system is most sensitive, and stripes too fine or too coarse vanish even at full contrast. Step back and the whole arch slides right, because spatial frequency is fixed on the screen but changes on your retina with distance. <em>You are not seeing the chart — you are seeing the limits of the instrument that sees it.</em></p>
+  <p class="cite">Photon to Phenomenology · after Palmer, <i>Vision Science: Photons to Phenomenology</i>, §4.2 (contrast sensitivity; Campbell & Robson 1968) · @ciamac</p>
+
+<script>
+(function(){
+  const cv = document.getElementById('c');
+  const fallback = document.getElementById('fallback');
+  const gl = cv.getContext('webgl') || cv.getContext('experimental-webgl');
+  if(!gl){ cv.style.display='none'; fallback.style.display='block'; return; }
+
+  const VERT = `
+    attribute vec2 p;
+    varying vec2 uv;
+    void main(){ uv = p*0.5+0.5; gl_Position = vec4(p,0.0,1.0); }`;
+
+  // Campbell-Robson chart: frequency rises exp with x, contrast rises exp toward bottom.
+  // Threshold envelope (CSF) is a log-Gaussian band-pass; we shade the arch where
+  // the local contrast crosses the modeled threshold.
+  const FRAG = `
+    precision highp float;
+    varying vec2 uv;
+    uniform float uGain;     // overall contrast multiplier
+    uniform float uFreqAmt;  // frequency-range scaler
+    uniform float uArch;     // 0..1, how strongly to draw the sensitivity arch
+    uniform vec2  uRes;
+
+    void main(){
+      float x = uv.x;
+      float y = uv.y;                 // 0 bottom .. 1 top (gl uv)
+      // spatial frequency (cycles across width), exponential in x
+      float freq = exp(x * 4.4) * 0.45 * uFreqAmt;
+      float cycles = freq * (uRes.x / 40.0);
+      float phase = sin(x * 6.28318 * cycles);
+      // contrast: high at bottom (gl y=0), low at top (gl y=1)
+      float contrast = pow(1.0 - y, 3.0) * uGain;
+      float lum = 0.5 + 0.5 * contrast * phase;
+      vec3 col = vec3(lum) * vec3(1.0, 0.985, 0.92);   // toward cream register
+
+      // modeled contrast-sensitivity threshold (log-Gaussian band-pass)
+      float lf = log2(freq + 0.001);
+      float peak = 1.9;                      // peak sensitivity frequency (log2)
+      float bw = 1.35;                       // bandwidth
+      float sens = exp(-pow((lf - peak)/bw, 2.0));   // 0..1
+      float threshold = 1.0 - sens;          // freq extremes need more contrast
+      // arch contour: where the available contrast at this row crosses threshold
+      float archLine = smoothstep(0.02, 0.0, abs(contrast - threshold));
+      col = mix(col, vec3(0.91,0.36,0.30), archLine * uArch);
+
+      gl_FragColor = vec4(col, 1.0);
+    }`;
+
+  function sh(type, src){
+    const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+    if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){ console.error(gl.getShaderInfoLog(s)); }
+    return s;
+  }
+  const prog = gl.createProgram();
+  gl.attachShader(prog, sh(gl.VERTEX_SHADER, VERT));
+  gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FRAG));
+  gl.linkProgram(prog); gl.useProgram(prog);
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(prog,'p');
+  gl.enableVertexAttribArray(loc);
+  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+  const uGain = gl.getUniformLocation(prog,'uGain');
+  const uFreq = gl.getUniformLocation(prog,'uFreqAmt');
+  const uArch = gl.getUniformLocation(prog,'uArch');
+  const uRes  = gl.getUniformLocation(prog,'uRes');
+  gl.uniform2f(uRes, cv.width, cv.height);
+
+  // --- eased state: target vs current, lerped each frame ---
+  const gainEl=document.getElementById('gain'), gainv=document.getElementById('gainv');
+  const freqElm=document.getElementById('freq'), freqv=document.getElementById('freqv');
+  const csf=document.getElementById('csf');
+
+  const state = { gain:1.0, freq:1.0, arch:0.0 };
+  const target = { gain:1.0, freq:1.0, arch:0.0 };
+
+  function readTargets(){
+    target.gain = +gainEl.value/100;
+    target.freq = +freqElm.value/100;
+    target.arch = csf.checked ? 1.0 : 0.0;
+    gainv.textContent = Math.round(target.gain*100)+'%';
+    freqv.textContent = Math.round(target.freq*100)+'%';
+  }
+  gainEl.addEventListener('input', readTargets);
+  freqElm.addEventListener('input', readTargets);
+  csf.addEventListener('change', readTargets);
+  readTargets();
+
+  function frame(){
+    // critically-damped-ish lerp toward target (eased motion)
+    state.gain += (target.gain - state.gain) * 0.16;
+    state.freq += (target.freq - state.freq) * 0.16;
+    state.arch += (target.arch - state.arch) * 0.12;
+
+    gl.uniform1f(uGain, state.gain);
+    gl.uniform1f(uFreq, state.freq);
+    gl.uniform1f(uArch, state.arch);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+</script>
+</main>
+</body>
+</html>

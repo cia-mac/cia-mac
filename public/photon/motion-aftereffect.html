@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The world slides back — the motion aftereffect · Photon to Phenomenology</title>
+<style>
+  :root { --bg:#0c0b09; --ink:#e8e0d0; --dim:#8a8378; --hair:#2a2823; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--ink); font:16px/1.55 -apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif; display:flex; justify-content:center; padding:48px 20px 64px; }
+  main { width:100%; max-width:680px; }
+  h1 { font-size:22px; font-weight:600; letter-spacing:-0.01em; }
+  .sub { color:var(--dim); margin-top:6px; font-size:14px; }
+  .stage { position:relative; margin:28px 0 0; border:1px solid var(--hair); overflow:hidden; }
+  canvas { display:block; width:100%; height:auto; }
+  .fix { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:14px; height:14px; pointer-events:none; }
+  .fix::before, .fix::after { content:""; position:absolute; background:#0c0b09; box-shadow:0 0 0 1px rgba(232,224,208,.55); }
+  .fix::before { left:6px; top:0; width:2px; height:14px; }
+  .fix::after { top:6px; left:0; height:2px; width:14px; }
+  .phase { position:absolute; right:12px; bottom:10px; font:13px/1 ui-monospace,"SF Mono",Menlo,monospace; color:var(--dim); }
+  .prompt { margin-top:10px; min-height:44px; font-size:14px; color:var(--dim); }
+  .prompt em { color:var(--ink); font-style:normal; }
+  .controls { margin-top:18px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  button { background:none; border:1px solid var(--hair); color:var(--dim); font:13px -apple-system,Helvetica,sans-serif; padding:7px 16px; cursor:pointer; }
+  button:hover:not(:disabled){ color:var(--ink); border-color:var(--dim); }
+  button:disabled{ opacity:.4; cursor:default; }
+  button.primary{ color:var(--ink); border-color:var(--dim); }
+  button.active{ color:var(--ink); border-color:var(--ink); }
+  .durrow { display:flex; align-items:center; gap:12px; margin-top:16px; }
+  .durrow label { font-size:13px; color:var(--dim); }
+  .durrow .val { font:13px/1 ui-monospace,Menlo,monospace; color:var(--dim); width:34px; }
+  input[type=range]{ -webkit-appearance:none; appearance:none; flex:1; max-width:220px; height:2px; background:var(--hair); outline:none; }
+  input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:14px; height:14px; border-radius:50%; background:var(--ink); cursor:pointer; }
+  input[type=range]::-moz-range-thumb{ width:14px; height:14px; border-radius:50%; background:var(--ink); border:none; cursor:pointer; }
+  .note { margin-top:32px; font-size:14px; color:var(--dim); border-top:1px solid var(--hair); padding-top:18px; }
+  .note em { color:var(--ink); font-style:normal; }
+  .cite { margin-top:14px; font-size:12px; color:var(--dim); }
+</style>
+</head>
+<body>
+<main>
+  <h1>The world slides back</h1>
+  <p class="sub">Hold your gaze on the cross while the rings spiral inward. When they stop, the still image will swell toward you — motion with no movement, manufactured by your own visual system.</p>
+
+  <div class="stage" id="stage">
+    <canvas id="c" width="1200" height="720"></canvas>
+    <div class="fix"></div>
+    <span class="phase" id="phase"></span>
+  </div>
+  <p class="prompt" id="prompt">Pick a direction and press start. Keep your eyes on the centre cross the whole time — don't track the motion.</p>
+
+  <div class="controls">
+    <button id="dIn" class="active">Contract (inward)</button>
+    <button id="dOut">Expand (outward)</button>
+    <button id="dCW">Rotate</button>
+    <button id="start" class="primary">Start</button>
+  </div>
+
+  <div class="durrow">
+    <label>Adaptation</label>
+    <input type="range" id="dur" min="10" max="40" value="25">
+    <span class="val" id="durv">25s</span>
+  </div>
+
+  <p class="note">Direction-selective neurons in area MT fire constantly while you watch one direction of motion, and they adapt — their response sinks. The moment the motion stops, the opposing population, which was never fatigued, now out-votes them, and the brain reads that imbalance as real motion in the opposite direction. A static image visibly moves. This is the waterfall illusion, named by Aristotle and explained only in the last century. <em>The motion you see is not in the image and not on your retina — your visual system is reporting its own exhaustion as a fact about the world.</em></p>
+  <p class="cite">Photon to Phenomenology · after Palmer, <i>Vision Science: Photons to Phenomenology</i>, §10 (motion adaptation, area MT) · @ciamac</p>
+
+<script>
+(function(){
+  const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+  const W=cv.width, H=cv.height, cx=W/2, cy=H/2;
+  const phaseEl=document.getElementById('phase'), prompt=document.getElementById('prompt');
+  const startBtn=document.getElementById('start'), durEl=document.getElementById('dur'), durv=document.getElementById('durv');
+  const dirBtns={in:document.getElementById('dIn'), out:document.getElementById('dOut'), cw:document.getElementById('dCW')};
+
+  let dir='in', running=false, t0=0, rafId=null, phaseT=0;
+  const maxR=Math.hypot(cx,cy)+40;
+
+  function setDir(d){
+    dir=d;
+    for(const k in dirBtns) dirBtns[k].classList.toggle('active', k===d);
+  }
+  dirBtns.in.onclick =()=>{ if(!running) setDir('in'); };
+  dirBtns.out.onclick=()=>{ if(!running) setDir('out'); };
+  dirBtns.cw.onclick =()=>{ if(!running) setDir('cw'); };
+  durEl.addEventListener('input',()=>durv.textContent=durEl.value+'s');
+
+  // draw concentric rings (radial) or radial spokes (rotation), phase = animation offset
+  function draw(phase, contrast){
+    ctx.fillStyle='#0c0b09'; ctx.fillRect(0,0,W,H);
+    const cream='rgba(232,224,208,'+contrast+')';
+    if(dir==='cw'){
+      // rotating radial wedges
+      const spokes=48;
+      for(let i=0;i<spokes;i++){
+        if(i%2) continue;
+        const a0=(i/spokes)*Math.PI*2 + phase;
+        const a1=((i+1)/spokes)*Math.PI*2 + phase;
+        ctx.beginPath(); ctx.moveTo(cx,cy);
+        ctx.arc(cx,cy,maxR,a0,a1); ctx.closePath();
+        ctx.fillStyle=cream; ctx.fill();
+      }
+    }else{
+      // concentric rings; phase shifts radius -> looks like inward/outward flow
+      const ringW=46;
+      const dirSign = dir==='in' ? 1 : -1;
+      const off = (phase*dirSign) % (ringW*2);
+      ctx.fillStyle=cream;
+      for(let r=maxR + off; r>0; r-=ringW*2){
+        ctx.beginPath();
+        ctx.arc(cx,cy, Math.max(0,r), 0, Math.PI*2);
+        ctx.arc(cx,cy, Math.max(0,r-ringW), 0, Math.PI*2, true);
+        ctx.fill();
+      }
+    }
+  }
+
+  function loop(ts){
+    if(!t0) t0=ts;
+    const elapsed=(ts-t0)/1000;
+    const total=+durEl.value;
+    phaseT += 0.045;                      // smooth motion speed
+    if(elapsed < total){
+      const remaining=Math.ceil(total-elapsed);
+      phaseEl.textContent=remaining+'s';
+      // ease contrast up over first 0.6s so it doesn't pop
+      const c=Math.min(1, elapsed/0.6)*0.9;
+      draw(phaseT*40, c);
+      rafId=requestAnimationFrame(loop);
+    }else{
+      testPhase();
+    }
+  }
+
+  function testPhase(){
+    cancelAnimationFrame(rafId);
+    phaseEl.textContent='';
+    // freeze a still frame — the aftereffect lives in the viewer now
+    draw(phaseT*40, 0.9);
+    prompt.innerHTML = 'Keep fixating. The still image is <em>'+(dir==='in'?'swelling outward':dir==='out'?'shrinking inward':'rotating back')+'</em> — though not one pixel is moving.';
+    setTimeout(()=>{
+      running=false; t0=0;
+      startBtn.disabled=false;
+      for(const k in dirBtns) dirBtns[k].disabled=false;
+      durEl.disabled=false;
+      prompt.innerHTML='Run it again — longer adaptation makes the aftereffect stronger and last longer.';
+    }, 9000);
+  }
+
+  startBtn.onclick=()=>{
+    if(running) return;
+    running=true; t0=0; phaseT=0;
+    startBtn.disabled=true;
+    for(const k in dirBtns) dirBtns[k].disabled=true;
+    durEl.disabled=true;
+    prompt.innerHTML='Fixate the cross. <em>Do not follow the motion with your eyes.</em>';
+    rafId=requestAnimationFrame(loop);
+  };
+
+  // initial still preview
+  draw(0,0.5);
+})();
+</script>
+</main>
+</body>
+</html>

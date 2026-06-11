@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The chase that isn't there — the lilac chaser · Photon to Phenomenology</title>
+<style>
+  :root { --bg:#7c7c7c; --ink:#e8e0d0; --dim:#8a8378; --hair:#2a2823; --panel:#0c0b09; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--panel); color:var(--ink); font:16px/1.55 -apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif; display:flex; justify-content:center; padding:48px 20px 64px; }
+  main { width:100%; max-width:680px; }
+  h1 { font-size:22px; font-weight:600; letter-spacing:-0.01em; }
+  .sub { color:var(--dim); margin-top:6px; font-size:14px; }
+  .stage { margin:28px 0 0; border:1px solid var(--hair); display:flex; align-items:center; justify-content:center; background:#808080; }
+  canvas { display:block; width:100%; max-width:520px; height:auto; }
+  .prompt { margin-top:10px; min-height:44px; font-size:14px; color:var(--dim); }
+  .prompt em { color:var(--ink); font-style:normal; }
+  .controls { margin-top:18px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  button { background:none; border:1px solid var(--hair); color:var(--dim); font:13px -apple-system,Helvetica,sans-serif; padding:7px 16px; cursor:pointer; }
+  button:hover{ color:var(--ink); border-color:var(--dim); }
+  button.active{ color:var(--ink); border-color:var(--ink); }
+  .row { display:grid; grid-template-columns:120px 1fr 56px; align-items:center; gap:14px; margin-top:16px; }
+  .row label { font-size:13px; color:var(--dim); }
+  .row .val { font:13px/1 ui-monospace,Menlo,monospace; color:var(--dim); text-align:right; }
+  input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--hair); outline:none; }
+  input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:14px; height:14px; border-radius:50%; background:var(--ink); cursor:pointer; }
+  input[type=range]::-moz-range-thumb{ width:14px; height:14px; border-radius:50%; background:var(--ink); border:none; cursor:pointer; }
+  .note { margin-top:32px; font-size:14px; color:var(--dim); border-top:1px solid var(--hair); padding-top:18px; }
+  .note em { color:var(--ink); font-style:normal; }
+  .cite { margin-top:14px; font-size:12px; color:var(--dim); }
+</style>
+</head>
+<body>
+<main>
+  <h1>The chase that isn't there</h1>
+  <p class="sub">Twelve lilac dots, one blank gap circling the ring. Watch the gap and you see a chase. Then stare at the centre cross — and the dots turn green, then disappear entirely, leaving a green ghost running through emptiness.</p>
+
+  <div class="stage">
+    <canvas id="c" width="1040" height="1040"></canvas>
+  </div>
+  <p class="prompt" id="prompt">Stage 1 — just watch the moving gap travel around the ring.</p>
+
+  <div class="controls">
+    <button id="s1" class="active">1 · the gap</button>
+    <button id="s2">2 · the green chaser</button>
+    <button id="s3">3 · the vanishing</button>
+  </div>
+
+  <div class="row">
+    <label>Speed</label>
+    <input type="range" id="speed" min="4" max="20" value="10">
+    <span class="val" id="speedv"></span>
+  </div>
+
+  <p class="note">Nothing green is ever drawn, and no dot ever leaves. Three constructions stack on the same image. The travelling gap reads as a moving object — your visual system prefers motion to a hole. Fixate and each erased disk leaves a green afterimage in its place, the opponent of lilac. Hold still longer and the unchanging lilac dots fade out of awareness entirely — steady, peripheral, unchanging stimuli are discarded — until only the moving green afterimage remains, chasing around a grey field that contains none of it. <em>Three things you plainly see, none of them present: vision is construction, not recording.</em></p>
+  <p class="cite">Photon to Phenomenology · after Palmer, <i>Vision Science: Photons to Phenomenology</i>, §3.2 / §11 (afterimages, Troxler fading; Jeremy Hinton 2005) · @ciamac</p>
+
+<script>
+(function(){
+  const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+  const W=cv.width, H=cv.height, cx=W/2, cy=H/2;
+  const N=12, ringR=W*0.36, dotR=W*0.072;
+  const prompt=document.getElementById('prompt');
+  const speed=document.getElementById('speed'), speedv=document.getElementById('speedv');
+  const btns={1:document.getElementById('s1'),2:document.getElementById('s2'),3:document.getElementById('s3')};
+  let stage=1;
+  const PROMPTS={
+    1:'Stage 1 — just watch the moving gap travel around the ring. It looks like a moving object.',
+    2:'Stage 2 — now fixate the centre cross and don’t move your eyes. The blanked spot glows <em>green</em> — the opponent of lilac, made by your own retina.',
+    3:'Stage 3 — keep fixating, longer. The lilac dots fade away completely (Troxler fading), leaving only a green dot chasing around an empty grey field.'
+  };
+  function setStage(s){
+    stage=s;
+    for(const k in btns) btns[k].classList.toggle('active', +k===s);
+    prompt.innerHTML=PROMPTS[s];
+  }
+  btns[1].onclick=()=>setStage(1); btns[2].onclick=()=>setStage(2); btns[3].onclick=()=>setStage(3);
+  speed.addEventListener('input',()=>speedv.textContent=(speed.value/10).toFixed(1)+'x');
+  speedv.textContent='1.0x';
+
+  // soft lilac disk drawn to an offscreen sprite once
+  const spr=document.createElement('canvas'); spr.width=spr.height=dotR*2.4;
+  const sctx=spr.getContext('2d'); const sr=spr.width/2;
+  const g=sctx.createRadialGradient(sr,sr,0,sr,sr,dotR);
+  g.addColorStop(0,'rgba(214,90,214,0.95)');
+  g.addColorStop(0.6,'rgba(214,90,214,0.75)');
+  g.addColorStop(1,'rgba(214,90,214,0)');
+  sctx.fillStyle=g; sctx.beginPath(); sctx.arc(sr,sr,dotR,0,7); sctx.fill();
+
+  let t0=0;
+  function frame(ts){
+    if(!t0) t0=ts;
+    const sp=+speed.value/10;
+    // one full lap ~ N * 0.1s baseline; gap index advances over time
+    const cyclePos=((ts-t0)/1000) * sp * 1.25;       // disks blanked per second
+    const gapIndex=Math.floor(cyclePos) % N;
+
+    ctx.fillStyle='#808080'; ctx.fillRect(0,0,W,H);
+
+    // in stage 3 we visually approximate Troxler fade so the static-image demo still reads
+    const lilacAlpha = stage===3 ? 0.5 : 1.0;
+
+    for(let i=0;i<N;i++){
+      if(i===gapIndex) continue;             // the travelling gap
+      const a=(i/N)*Math.PI*2 - Math.PI/2;
+      const x=cx+ringR*Math.cos(a), y=cy+ringR*Math.sin(a);
+      ctx.globalAlpha=lilacAlpha;
+      ctx.drawImage(spr, x-spr.width/2, y-spr.height/2);
+    }
+    ctx.globalAlpha=1;
+
+    // green afterimage hint at the gap for stages 2-3 (faint; the strong effect is in the eye)
+    if(stage>=2){
+      const a=(gapIndex/N)*Math.PI*2 - Math.PI/2;
+      const x=cx+ringR*Math.cos(a), y=cy+ringR*Math.sin(a);
+      const gg=ctx.createRadialGradient(x,y,0,x,y,dotR);
+      const ga = stage===3 ? 0.22 : 0.12;
+      gg.addColorStop(0,'rgba(120,210,120,'+ga+')');
+      gg.addColorStop(1,'rgba(120,210,120,0)');
+      ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(x,y,dotR,0,7); ctx.fill();
+    }
+
+    // fixation cross
+    ctx.strokeStyle='rgba(20,20,20,0.85)'; ctx.lineWidth=Math.max(2,W*0.004);
+    const cl=W*0.018;
+    ctx.beginPath();
+    ctx.moveTo(cx-cl,cy); ctx.lineTo(cx+cl,cy);
+    ctx.moveTo(cx,cy-cl); ctx.lineTo(cx,cy+cl);
+    ctx.stroke();
+
+    requestAnimationFrame(frame);
+  }
+  setStage(1);
+  requestAnimationFrame(frame);
+})();
+</script>
+</main>
+</body>
+</html>

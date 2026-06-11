@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why these belong together — Gestalt grouping · Photon to Phenomenology</title>
+<style>
+  :root { --bg:#0c0b09; --ink:#e8e0d0; --dim:#8a8378; --hair:#2a2823; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--ink); font:16px/1.55 -apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif; display:flex; justify-content:center; padding:48px 20px 64px; }
+  main { width:100%; max-width:680px; }
+  h1 { font-size:22px; font-weight:600; letter-spacing:-0.01em; }
+  .sub { color:var(--dim); margin-top:6px; font-size:14px; }
+  canvas { display:block; width:100%; margin:28px 0 8px; border:1px solid var(--hair); }
+  .controls { margin-top:18px; display:grid; gap:14px; }
+  .row { display:grid; grid-template-columns:150px 1fr 64px; align-items:center; gap:14px; }
+  .row label { font-size:14px; }
+  .row .val { font:13px/1 ui-monospace,"SF Mono",Menlo,monospace; color:var(--dim); text-align:right; }
+  input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--hair); outline:none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:14px; height:14px; border-radius:50%; background:var(--ink); cursor:pointer; }
+  input[type=range]::-moz-range-thumb { width:14px; height:14px; border-radius:50%; background:var(--ink); border:none; cursor:pointer; }
+  .verdict { margin-top:22px; border-top:1px solid var(--hair); padding-top:16px; font-size:15px; color:var(--ink); min-height:24px; }
+  .note { margin-top:28px; font-size:14px; color:var(--dim); border-top:1px solid var(--hair); padding-top:18px; }
+  .note em { color:var(--ink); font-style:normal; }
+  .cite { margin-top:14px; font-size:12px; color:var(--dim); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Why these belong together</h1>
+  <p class="sub">The same dots, every time. Nudge the spacing and the colour, and watch your visual system decide — against your will — what groups with what.</p>
+
+  <canvas id="c" width="900" height="560"></canvas>
+
+  <div class="controls">
+    <div class="row">
+      <label>Proximity</label>
+      <input type="range" id="prox" min="-100" max="100" value="0">
+      <span class="val" id="proxv"></span>
+    </div>
+    <div class="row">
+      <label>Similarity</label>
+      <input type="range" id="sim" min="0" max="100" value="0">
+      <span class="val" id="simv"></span>
+    </div>
+  </div>
+
+  <p class="verdict" id="verdict"></p>
+
+  <p class="note">Nothing in the dots says "row" or "column" — that organisation is added by you. Proximity pulls the closer dots into a group; similarity pulls the matching ones. Set them against each other and you can feel the competition: the grid reorganises as one cue overtakes the other. These grouping laws are not learned rules you apply — they are automatic commitments the visual system makes before you get a say. <em>The arrangement you see is authored, not received.</em></p>
+  <p class="cite">Photon to Phenomenology · after Palmer, <i>Vision Science: Photons to Phenomenology</i>, §6.1 (Gestalt grouping; Wertheimer 1923) · @ciamac</p>
+
+<script>
+(function(){
+  const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+  const W=cv.width, H=cv.height;
+  const prox=document.getElementById('prox'), simEl=document.getElementById('sim');
+  const proxv=document.getElementById('proxv'), simv=document.getElementById('simv');
+  const verdict=document.getElementById('verdict');
+  const cols=8, rows=6;
+
+  function draw(){
+    const p=+prox.value;          // -100 (rows tight) .. +100 (cols tight)
+    const s=+simEl.value/100;     // 0..1 colour difference by column
+    proxv.textContent = p<-15?'rows':p>15?'columns':'even';
+    simv.textContent = s<0.05?'off':Math.round(s*100)+'%';
+
+    ctx.fillStyle='#0c0b09'; ctx.fillRect(0,0,W,H);
+    const baseGapX=78, baseGapY=64;
+    // proximity skews the gaps: negative -> small vertical gap (rows read), positive -> small horizontal gap (cols read)
+    const gapX=baseGapX*(1 - Math.max(0,-p)/140);
+    const gapY=baseGapY*(1 - Math.max(0, p)/140);
+    const gridW=(cols-1)*gapX, gridH=(rows-1)*gapY;
+    const ox=(W-gridW)/2, oy=(H-gridH)/2;
+
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        const x=ox+c*gapX, y=oy+r*gapY;
+        // similarity: alternate fill vs ring by column
+        const grpByCol = (c%2===0);
+        const cream='#e8e0d0';
+        ctx.beginPath(); ctx.arc(x,y,11,0,7);
+        if(s>0 && grpByCol){
+          // open dot for one column-group
+          ctx.lineWidth=2.4; ctx.strokeStyle=`rgba(232,224,208,${0.35+0.55*s})`;
+          ctx.fillStyle=`rgba(232,224,208,${0.10*(1-s)})`; ctx.fill(); ctx.stroke();
+        }else{
+          ctx.fillStyle=cream; ctx.fill();
+        }
+      }
+    }
+
+    const proxRows=p<-15, proxCols=p>15, simOn=s>0.35;
+    verdict.textContent =
+      simOn && proxRows ? 'Conflict: spacing groups it into rows, colour groups it into columns. Your percept flickers between them.' :
+      simOn && proxCols ? 'Spacing and colour agree — strong, locked columns.' :
+      simOn ? 'Colour alone is grouping the dots into columns, with no help from spacing.' :
+      proxRows ? 'Tighter vertical spacing — you read horizontal rows.' :
+      proxCols ? 'Tighter horizontal spacing — you read vertical columns.' :
+      'Even spacing, identical dots — the grid is ambiguous and your grouping drifts.';
+  }
+  prox.addEventListener('input',draw);
+  simEl.addEventListener('input',draw);
+  draw();
+})();
+</script>
+</main>
+</body>
+</html>

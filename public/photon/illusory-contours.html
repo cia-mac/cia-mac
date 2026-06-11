@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The triangle that isn't there — illusory contours · Photon to Phenomenology</title>
+<style>
+  :root { --bg:#0c0b09; --ink:#e8e0d0; --dim:#8a8378; --hair:#2a2823; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--ink); font:16px/1.55 -apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif; display:flex; justify-content:center; padding:48px 20px 64px; }
+  main { width:100%; max-width:680px; }
+  h1 { font-size:22px; font-weight:600; letter-spacing:-0.01em; }
+  .sub { color:var(--dim); margin-top:6px; font-size:14px; }
+  canvas { display:block; width:100%; margin:28px 0 8px; border:1px solid var(--hair); }
+  .controls { margin-top:18px; display:grid; gap:14px; }
+  .row { display:grid; grid-template-columns:150px 1fr 64px; align-items:center; gap:14px; }
+  .row label { font-size:14px; }
+  .row .val { font:13px/1 ui-monospace,"SF Mono",Menlo,monospace; color:var(--dim); text-align:right; }
+  input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--hair); outline:none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:14px; height:14px; border-radius:50%; background:var(--ink); cursor:pointer; }
+  input[type=range]::-moz-range-thumb { width:14px; height:14px; border-radius:50%; background:var(--ink); border:none; cursor:pointer; }
+  .verdict { margin-top:22px; border-top:1px solid var(--hair); padding-top:16px; font-size:15px; color:var(--ink); min-height:24px; }
+  .note { margin-top:28px; font-size:14px; color:var(--dim); border-top:1px solid var(--hair); padding-top:18px; }
+  .note em { color:var(--ink); font-style:normal; }
+  .cite { margin-top:14px; font-size:12px; color:var(--dim); }
+</style>
+</head>
+<body>
+<main>
+  <h1>The triangle that isn't there</h1>
+  <p class="sub">Three notched discs. When the notches line up, a solid white triangle appears — with crisp edges and a brightness of its own. Turn them away and it evaporates. Drag the slider.</p>
+
+  <canvas id="c" width="760" height="600"></canvas>
+
+  <div class="controls">
+    <div class="row">
+      <label>Notch alignment</label>
+      <input type="range" id="align" min="0" max="100" value="100">
+      <span class="val" id="alignv"></span>
+    </div>
+  </div>
+
+  <p class="verdict" id="verdict"></p>
+
+  <p class="note">No triangle is drawn. There is no edge between the "triangle" and the page, and the white inside it is the same white as outside it — measure the pixels and they are identical. Yet you see a bright, sharp-edged shape lying on top of three discs. Given notches that could be explained by an occluding surface, your visual system invents that surface, complete with borders it then perceives as real. <em>It is not filling in a gap in the image — it is constructing an object the image never contained.</em></p>
+  <p class="cite">Photon to Phenomenology · after Palmer, <i>Vision Science: Photons to Phenomenology</i>, §6.4 (illusory contours; Kanizsa 1955) · @ciamac</p>
+
+<script>
+(function(){
+  const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+  const W=cv.width, H=cv.height;
+  const align=document.getElementById('align'), alignv=document.getElementById('alignv');
+  const verdict=document.getElementById('verdict');
+  const cx=W/2, cy=H/2+10, R=200, pac=70;   // triangle circumradius, disc radius
+  // three disc centres (upward triangle)
+  const pts=[0,1,2].map(k=>{
+    const a=-Math.PI/2 + k*2*Math.PI/3;
+    return {x:cx+R*Math.cos(a), y:cy+R*Math.sin(a), a};
+  });
+
+  function draw(){
+    const t=+align.value/100;            // 1 aligned -> 0 turned away
+    alignv.textContent=Math.round(t*100)+'%';
+    ctx.fillStyle='#0c0b09'; ctx.fillRect(0,0,W,H);
+
+    // direction each notch must point to form the central triangle: toward centre
+    for(const p of pts){
+      const toC=Math.atan2(cy-p.y, cx-p.x);
+      const turned=toC + (1-t)*Math.PI;   // rotate the bite away as alignment drops
+      // draw the full disc, then cut a wedge out of it with a background-coloured slice
+      ctx.beginPath(); ctx.arc(p.x,p.y,pac,0,7); ctx.fillStyle='#e8e0d0'; ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(p.x,p.y);
+      ctx.arc(p.x,p.y,pac+2, turned-0.52, turned+0.52);
+      ctx.closePath();
+      ctx.fillStyle='#0c0b09'; ctx.fill();
+    }
+
+    verdict.textContent =
+      t>0.85 ? 'The notches point inward — a bright triangle snaps into existence, edges and all.' :
+      t>0.45 ? 'Half-turned — the surface is breaking up; the illusory edges weaken.' :
+      'The discs just look bitten. With nothing to occlude, no triangle is constructed.';
+  }
+  align.addEventListener('input',draw);
+  draw();
+})();
+</script>
+</main>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The colour that isn't there — opponent afterimages · Photon to Phenomenology</title>
+<style>
+  :root {
+    --bg: #0c0b09;
+    --ink: #e8e0d0;
+    --dim: #8a8378;
+    --hair: #2a2823;
+    --field: #ddd6c6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.55 -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 48px 20px 64px;
+  }
+  main { width: 100%; max-width: 680px; }
+  h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .sub { color: var(--dim); margin-top: 6px; font-size: 14px; }
+
+  .stage {
+    position: relative;
+    margin: 28px 0 0;
+    width: 100%;
+    aspect-ratio: 17 / 10;
+    background: var(--field);
+    border: 1px solid var(--hair);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .disc {
+    width: 38%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: #e02020;
+  }
+  .disc.ghost { background: transparent; border: 1px dashed rgba(12,11,9,0.18); }
+  .disc.hidden { visibility: hidden; }
+  .cross {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    font: 600 20px/1 ui-monospace, "SF Mono", Menlo, monospace;
+    color: rgba(12, 11, 9, 0.8);
+    user-select: none;
+  }
+  .timer {
+    position: absolute;
+    right: 14px; bottom: 10px;
+    font: 13px/1 ui-monospace, "SF Mono", Menlo, monospace;
+    color: rgba(12, 11, 9, 0.55);
+  }
+  .prompt {
+    margin-top: 10px;
+    min-height: 44px;
+    font-size: 14px;
+    color: var(--dim);
+  }
+  .prompt em { color: var(--ink); font-style: normal; }
+
+  .controls {
+    margin-top: 18px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  button {
+    background: none;
+    border: 1px solid var(--hair);
+    color: var(--dim);
+    font: 13px -apple-system, Helvetica, sans-serif;
+    padding: 7px 16px;
+    cursor: pointer;
+  }
+  button:hover:not(:disabled) { color: var(--ink); border-color: var(--dim); }
+  button:disabled { opacity: 0.4; cursor: default; }
+  button.primary { color: var(--ink); border-color: var(--dim); }
+  .swatchbtn { display: inline-flex; align-items: center; gap: 8px; }
+  .swatchbtn i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+  .swatchbtn.active { color: var(--ink); border-color: var(--ink); }
+
+  .durrow { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+  .durrow label { font-size: 13px; color: var(--dim); }
+  .durrow .val { font: 13px/1 ui-monospace, "SF Mono", Menlo, monospace; color: var(--dim); width: 34px; }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    flex: 1; max-width: 220px;
+    height: 2px; background: var(--hair); outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--ink); cursor: pointer;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--ink); border: none; cursor: pointer;
+  }
+
+  .note { margin-top: 32px; font-size: 14px; color: var(--dim); border-top: 1px solid var(--hair); padding-top: 18px; }
+  .note em { color: var(--ink); font-style: normal; }
+  .cite { margin-top: 14px; font-size: 12px; color: var(--dim); }
+</style>
+</head>
+<body>
+<main>
+  <h1>The colour that isn't there</h1>
+  <p class="sub">Stare at the cross without moving your eyes. When the disc vanishes, your visual system will paint its opponent colour onto the blank field.</p>
+
+  <div class="stage" id="stage">
+    <div class="disc" id="disc"></div>
+    <div class="cross">+</div>
+    <div class="timer" id="timer"></div>
+  </div>
+  <p class="prompt" id="prompt">Pick a colour, press start, and hold your gaze on the cross. Full screen brightness helps.</p>
+
+  <div class="controls">
+    <button class="swatchbtn active" data-c="red"><i style="background:#e02020"></i>Red</button>
+    <button class="swatchbtn" data-c="green"><i style="background:#18a040"></i>Green</button>
+    <button class="swatchbtn" data-c="blue"><i style="background:#2545cf"></i>Blue</button>
+    <button class="swatchbtn" data-c="yellow"><i style="background:#ddc020"></i>Yellow</button>
+    <button class="primary" id="start">Start</button>
+  </div>
+
+  <div class="durrow">
+    <label>Adaptation</label>
+    <input type="range" id="dur" min="10" max="30" value="20">
+    <span class="val" id="durv">20s</span>
+  </div>
+
+  <p class="note">While you stared, the cones and opponent channels driven by that colour adapted — their response sagged. Remove the stimulus and the system rebounds past neutral: red–green and blue–yellow are wired as opposing pairs, so fatigue on one side reads as a signal from the other. The colour you just saw on the empty field arrived through no photon at all. <em>It was manufactured entirely by your visual system — vision is construction, not recording.</em></p>
+  <p class="cite">Photon to Phenomenology · after Palmer, <i>Vision Science: Photons to Phenomenology</i>, §3.2 (opponent process theory) · @ciamac</p>
+
+<script>
+(function () {
+  const COLORS = {
+    red:    { fill: '#e02020', opp: 'green — the red–green channel rebounding' },
+    green:  { fill: '#18a040', opp: 'red — the red–green channel rebounding' },
+    blue:   { fill: '#2545cf', opp: 'yellow — the blue–yellow channel rebounding' },
+    yellow: { fill: '#ddc020', opp: 'blue — the blue–yellow channel rebounding' }
+  };
+  const disc = document.getElementById('disc');
+  const timer = document.getElementById('timer');
+  const prompt = document.getElementById('prompt');
+  const startBtn = document.getElementById('start');
+  const dur = document.getElementById('dur');
+  const durv = document.getElementById('durv');
+  const swatches = [...document.querySelectorAll('.swatchbtn')];
+
+  let color = 'red';
+  let running = false;
+  let tick = null;
+
+  function setColor(c) {
+    color = c;
+    disc.className = 'disc';
+    disc.style.background = COLORS[c].fill;
+    swatches.forEach(b => b.classList.toggle('active', b.dataset.c === c));
+  }
+
+  dur.addEventListener('input', () => { durv.textContent = dur.value + 's'; });
+
+  swatches.forEach(b => b.addEventListener('click', () => {
+    if (running) return;
+    setColor(b.dataset.c);
+  }));
+
+  startBtn.addEventListener('click', () => {
+    if (running) return;
+    running = true;
+    startBtn.disabled = true;
+    swatches.forEach(b => b.disabled = true);
+    dur.disabled = true;
+
+    setColor(color);
+    let remaining = +dur.value;
+    prompt.innerHTML = 'Fixate the cross. <em>Do not move your eyes.</em>';
+    timer.textContent = remaining + 's';
+
+    tick = setInterval(() => {
+      remaining--;
+      timer.textContent = remaining + 's';
+      if (remaining <= 0) {
+        clearInterval(tick);
+        testPhase();
+      }
+    }, 1000);
+  });
+
+  function testPhase() {
+    disc.style.background = 'transparent';
+    disc.className = 'disc ghost';
+    timer.textContent = '';
+    prompt.innerHTML = 'Keep fixating. The disc you see now is <em>' + COLORS[color].opp + '</em>. No light of that colour is reaching your eye.';
+    setTimeout(() => {
+      running = false;
+      startBtn.disabled = false;
+      swatches.forEach(b => b.disabled = false);
+      dur.disabled = false;
+      prompt.innerHTML = 'Run it again with another colour — each one rebounds to its opponent.';
+      setColor(color);
+    }, 8000);
+  }
+
+  setColor('red');
+})();
+</script>
+</main>
+</body>
+</html>
