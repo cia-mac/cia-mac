@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Three lights — additive colour mixture · Photon to Phenomenology</title>
+<style>
+  :root {
+    --bg: #0c0b09;
+    --ink: #e8e0d0;
+    --dim: #8a8378;
+    --hair: #2a2823;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.55 -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 48px 20px 64px;
+  }
+  main { width: 100%; max-width: 680px; }
+  h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .sub { color: var(--dim); margin-top: 6px; font-size: 14px; }
+  canvas {
+    display: block;
+    width: 100%;
+    margin: 28px 0 8px;
+    border: 1px solid var(--hair);
+  }
+  .controls { margin-top: 20px; display: grid; gap: 14px; }
+  .row { display: grid; grid-template-columns: 110px 1fr 52px; align-items: center; gap: 14px; }
+  .row label { font-size: 14px; color: var(--ink); }
+  .row .val { font: 13px/1 ui-monospace, "SF Mono", Menlo, monospace; color: var(--dim); text-align: right; }
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 2px;
+    background: var(--hair);
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--ink);
+    cursor: pointer;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--ink);
+    border: none;
+    cursor: pointer;
+  }
+  .readout {
+    margin-top: 28px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    border-top: 1px solid var(--hair);
+    padding-top: 20px;
+  }
+  .readout h2 { font-size: 12px; font-weight: 500; color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+  .cone { display: grid; grid-template-columns: 16px 1fr 44px; align-items: center; gap: 10px; margin-bottom: 8px; font: 13px/1 ui-monospace, "SF Mono", Menlo, monospace; }
+  .cone .bar { height: 6px; background: var(--hair); position: relative; }
+  .cone .bar i { position: absolute; inset: 0 auto 0 0; background: var(--ink); }
+  .cone .num { color: var(--dim); text-align: right; }
+  .swatchwrap { display: flex; align-items: center; gap: 16px; }
+  .swatch { width: 64px; height: 64px; border: 1px solid var(--hair); }
+  .swatchlabel { font: 13px/1.5 ui-monospace, "SF Mono", Menlo, monospace; color: var(--dim); }
+  .presets { margin-top: 22px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .presets button {
+    background: none;
+    border: 1px solid var(--hair);
+    color: var(--dim);
+    font: 13px -apple-system, Helvetica, sans-serif;
+    padding: 6px 14px;
+    cursor: pointer;
+  }
+  .presets button:hover { color: var(--ink); border-color: var(--dim); }
+  .note { margin-top: 32px; font-size: 14px; color: var(--dim); border-top: 1px solid var(--hair); padding-top: 18px; }
+  .note em { color: var(--ink); font-style: normal; }
+  .cite { margin-top: 14px; font-size: 12px; color: var(--dim); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Three lights, one percept</h1>
+  <p class="sub">Additive mixture of three primaries. Where the beams overlap, the light adds — and your three cone types collapse the spectrum into three numbers.</p>
+
+  <canvas id="c" width="1360" height="760"></canvas>
+
+  <div class="controls">
+    <div class="row">
+      <label>Long&nbsp;· red</label>
+      <input type="range" id="r" min="0" max="255" value="230">
+      <span class="val" id="rv"></span>
+    </div>
+    <div class="row">
+      <label>Middle&nbsp;· green</label>
+      <input type="range" id="g" min="0" max="255" value="200">
+      <span class="val" id="gv"></span>
+    </div>
+    <div class="row">
+      <label>Short&nbsp;· blue</label>
+      <input type="range" id="b" min="0" max="255" value="0">
+      <span class="val" id="bv"></span>
+    </div>
+  </div>
+
+  <div class="presets">
+    <button data-p="255,255,0">Yellow</button>
+    <button data-p="255,0,255">Magenta</button>
+    <button data-p="0,255,255">Cyan</button>
+    <button data-p="255,255,255">White</button>
+    <button data-p="80,80,80">Dim grey</button>
+  </div>
+
+  <div class="readout">
+    <div>
+      <h2>Cone response</h2>
+      <div class="cone"><span>L</span><span class="bar"><i id="lb"></i></span><span class="num" id="ln"></span></div>
+      <div class="cone"><span>M</span><span class="bar"><i id="mb"></i></span><span class="num" id="mn"></span></div>
+      <div class="cone"><span>S</span><span class="bar"><i id="sb"></i></span><span class="num" id="sn"></span></div>
+    </div>
+    <div>
+      <h2>The mixture</h2>
+      <div class="swatchwrap">
+        <div class="swatch" id="sw"></div>
+        <div class="swatchlabel" id="swl"></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="note">There is no yellow light on this screen. Set red and green high, blue to zero: the centre reads as yellow because that mixture excites your L and M cones in the same ratio a single 580&nbsp;nm wavelength would. The percept is identical; the physics is not. <em>Colour is not a property of light — it is a construction of the visual system.</em></p>
+  <p class="cite">Photon to Phenomenology · after Palmer, <i>Vision Science: Photons to Phenomenology</i>, §3.2 (trichromatic theory, metamers) · @ciamac</p>
+</main>
+
+<script>
+(function () {
+  const cv = document.getElementById('c');
+  const ctx = cv.getContext('2d');
+  const ids = ['r', 'g', 'b'];
+  const sliders = ids.map(id => document.getElementById(id));
+  const vals = ids.map(id => document.getElementById(id + 'v'));
+
+  // Hunt–Pointer–Estevez (D65-normalized) approximation, linear RGB -> LMS
+  const LMS = [
+    [0.3139, 0.6395, 0.0466],
+    [0.1554, 0.7579, 0.0867],
+    [0.0178, 0.0942, 0.8880]
+  ];
+  const lin = v => Math.pow(v / 255, 2.2);
+
+  function draw() {
+    const [r, g, b] = sliders.map(s => +s.value);
+    vals[0].textContent = r; vals[1].textContent = g; vals[2].textContent = b;
+
+    const w = cv.width, h = cv.height;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = '#0c0b09';
+    ctx.fillRect(0, 0, w, h);
+
+    // three beams, additive
+    ctx.globalCompositeOperation = 'lighter';
+    const R = h * 0.34;
+    const cx = w / 2, cy = h * 0.54, d = R * 0.62;
+    const beams = [
+      { x: cx - d, y: cy - d * 0.55, col: [r, 0, 0] },
+      { x: cx + d, y: cy - d * 0.55, col: [0, g, 0] },
+      { x: cx,     y: cy + d * 0.75, col: [0, 0, b] }
+    ];
+    for (const bm of beams) {
+      const grad = ctx.createRadialGradient(bm.x, bm.y, R * 0.55, bm.x, bm.y, R);
+      grad.addColorStop(0, `rgb(${bm.col.join(',')})`);
+      grad.addColorStop(1, 'rgb(0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(bm.x, bm.y, R, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+
+    // cone responses
+    const rgbLin = [lin(r), lin(g), lin(b)];
+    const lms = LMS.map(row => row[0] * rgbLin[0] + row[1] * rgbLin[1] + row[2] * rgbLin[2]);
+    const bars = ['lb', 'mb', 'sb'], nums = ['ln', 'mn', 'sn'];
+    lms.forEach((v, i) => {
+      document.getElementById(bars[i]).style.width = (Math.min(v, 1) * 100).toFixed(1) + '%';
+      document.getElementById(nums[i]).textContent = v.toFixed(2);
+    });
+
+    // mixture swatch
+    const sw = document.getElementById('sw');
+    sw.style.background = `rgb(${r},${g},${b})`;
+    document.getElementById('swl').innerHTML =
+      `rgb(${r}, ${g}, ${b})<br>${name(r, g, b)}`;
+  }
+
+  function name(r, g, b) {
+    const mx = Math.max(r, g, b);
+    if (mx < 24) return 'darkness';
+    const [rn, gn, bn] = [r, g, b].map(v => v / mx);
+    if (rn > .85 && gn > .85 && bn > .85) return mx > 180 ? 'white' : 'grey';
+    if (rn > .85 && gn > .6 && bn < .35) return 'yellow / orange';
+    if (rn > .85 && gn > .85 && bn < .35) return 'yellow';
+    if (rn > .85 && bn > .85 && gn < .35) return 'magenta';
+    if (gn > .85 && bn > .85 && rn < .35) return 'cyan';
+    if (rn === 1 && gn < .5 && bn < .5) return 'red';
+    if (gn === 1 && rn < .5 && bn < .5) return 'green';
+    if (bn === 1 && rn < .5 && gn < .5) return 'blue';
+    return 'a mixture';
+  }
+
+  sliders.forEach(s => s.addEventListener('input', draw));
+  document.querySelectorAll('.presets button').forEach(btn =>
+    btn.addEventListener('click', () => {
+      const p = btn.dataset.p.split(',');
+      sliders.forEach((s, i) => s.value = p[i]);
+      draw();
+    })
+  );
+  draw();
+})();
+</script>
+</body>
+</html>
