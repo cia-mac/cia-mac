@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reading companion — Vision Science · Photon to Phenomenology</title>
+<meta name="description" content="A chapter-by-chapter interactive companion to Stephen Palmer's Vision Science: Photons to Phenomenology.">
+<style>
+  :root { --bg:#0c0b09; --ink:#e8e0d0; --dim:#8a8378; --faint:#5f5a50; --hair:#221f1a; --hair2:#2f2c25; --live:#c9a24b; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--ink); font:16px/1.6 -apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif; display:flex; justify-content:center; padding:64px 20px 80px; -webkit-font-smoothing:antialiased; }
+  main { width:100%; max-width:720px; }
+  .eyebrow { font:12px/1 ui-monospace,"SF Mono",Menlo,monospace; color:var(--dim); letter-spacing:.18em; text-transform:uppercase; }
+  h1 { font-size:30px; font-weight:600; letter-spacing:-0.02em; margin-top:14px; }
+  .byline { color:var(--dim); margin-top:10px; font-size:15px; }
+  .byline em { color:var(--ink); font-style:italic; }
+  .lead { color:var(--dim); margin-top:18px; font-size:15px; max-width:60ch; }
+  .lead em { color:var(--ink); font-style:normal; }
+  .legend { margin-top:22px; font:12px/1.5 ui-monospace,Menlo,monospace; color:var(--faint); }
+  .legend .dot { color:var(--live); }
+
+  .part { margin-top:52px; }
+  .part h2 { font:12px/1 ui-monospace,Menlo,monospace; color:var(--dim); letter-spacing:.16em; text-transform:uppercase; padding-bottom:10px; border-bottom:1px solid var(--hair2); }
+
+  .chap { padding:22px 0; border-bottom:1px solid var(--hair); }
+  .chap .head { display:grid; grid-template-columns:34px 1fr; gap:14px; align-items:baseline; }
+  .chap .cnum { font:13px/1.2 ui-monospace,Menlo,monospace; color:var(--faint); }
+  .chap .ctitle { font-size:17px; font-weight:600; }
+  .chap .ctitle .full { color:var(--dim); font-weight:400; font-size:14px; }
+  .concepts { margin:14px 0 0 48px; display:grid; gap:9px; }
+  .concept { display:grid; grid-template-columns:18px 1fr auto; gap:12px; align-items:baseline; font-size:14px; }
+  .concept .mk { font:12px/1.4 ui-monospace,Menlo,monospace; }
+  .concept a { color:var(--ink); text-decoration:none; border-bottom:1px solid var(--hair2); padding-bottom:1px; }
+  .concept a:hover { border-color:var(--ink); }
+  .concept.todo { color:var(--faint); }
+  .concept.todo .mk { color:var(--faint); }
+  .concept .live .mk, .concept.has .mk { color:var(--live); }
+  .tag { font:11px/1 ui-monospace,Menlo,monospace; color:var(--faint); border:1px solid var(--hair2); padding:3px 7px; border-radius:3px; white-space:nowrap; }
+  .tag.medium { color:var(--dim); }
+
+  .foot { margin-top:48px; font:13px/1.6 -apple-system,Helvetica,sans-serif; color:var(--dim); }
+  .foot a { color:var(--dim); }
+  .backlink { display:inline-block; margin-top:8px; font:12px/1 ui-monospace,Menlo,monospace; color:var(--faint); text-decoration:none; }
+  .backlink:hover { color:var(--ink); }
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">A reading companion</p>
+  <h1>Vision Science, chapter by chapter</h1>
+  <p class="byline">Built to sit beside Stephen E. Palmer, <em>Vision Science: Photons to Phenomenology</em> (MIT Press, 1999) — read the chapter, then turn the idea with your hands.</p>
+  <p class="lead">This follows the book's own order, not impact order. Each chapter lists its load-bearing ideas; where one has an interactive, it's linked. The spine is the book's argument, restated once per chapter: <em>vision is not recording — it is construction.</em></p>
+  <p class="legend"><span class="dot">●</span> interactive ready &nbsp;·&nbsp; ○ planned &nbsp;·&nbsp; tags mark the honest medium (GRAPH / FILM / STATIC)</p>
+
+  <!-- PART I -->
+  <section class="part">
+    <h2>Part I · Foundations</h2>
+
+    <div class="chap">
+      <div class="head"><span class="cnum">01</span><span class="ctitle">An Introduction to Vision Science</span></div>
+      <div class="concepts">
+        <div class="concept has"><span class="mk">●</span><span><a href="/photon/book/inverse-problem.html">Vision as the inverse problem</a> — one 2D image fits infinitely many 3D scenes</span><span class="tag">GRAPH</span></div>
+        <div class="concept todo"><span class="mk">○</span><span>Perception as a constructive act — ambiguous figures, completion</span><span class="tag medium">→ see Necker, Kanizsa (ch 6)</span></div>
+        <div class="concept todo"><span class="mk">○</span><span>Eye → retina → cortex: the visual pathway</span><span class="tag">STATIC</span></div>
+      </div>
+    </div>
+
+    <div class="chap">
+      <div class="head"><span class="cnum">02</span><span class="ctitle">Theoretical Approaches to Vision</span></div>
+      <div class="concepts">
+        <div class="concept todo"><span class="mk">○</span><span>Marr's three levels — computational, algorithmic, implementational</span><span class="tag">STATIC</span></div>
+        <div class="concept todo"><span class="mk">○</span><span>The four stages — image → surface → object → category</span><span class="tag">STATIC</span></div>
+      </div>
+    </div>
+
+    <div class="chap">
+      <div class="head"><span class="cnum">03</span><span class="ctitle">Color Vision: A Microcosm of Vision Science</span></div>
+      <div class="concepts">
+        <div class="concept has"><span class="mk">●</span><span><a href="/photon/trichromatic-mixing.html">Trichromatic theory & additive mixture</a></span><span class="tag">GRAPH</span></div>
+        <div class="concept has"><span class="mk">●</span><span><a href="/photon/opponent-afterimage.html">Opponent process & afterimages</a></span><span class="tag">GRAPH</span></div>
+        <div class="concept has"><span class="mk">●</span><span><a href="/photon/lilac-chaser.html">Color filling-in & the lilac chaser</a></span><span class="tag">GRAPH</span></div>
+        <div class="concept todo"><span class="mk">○</span><span>Color & lightness constancy — same surface, changing light</span><span class="tag">FILM</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PART II -->
+  <section class="part">
+    <h2>Part II · Spatial Vision</h2>
+
+    <div class="chap">
+      <div class="head"><span class="cnum">04</span><span class="ctitle">Processing Image Structure</span></div>
+      <div class="concepts">
+        <div class="concept has"><span class="mk">●</span><span><a href="/photon/receptive-field.html">Centre-surround receptive fields</a></span><span class="tag">GRAPH</span></div>
+        <div class="concept has"><span class="mk">●</span><span><a href="/photon/contrast-sensitivity.html">Spatial-frequency channels & contrast sensitivity</a></span><span class="tag">GRAPH</span></div>
+      </div>
+    </div>
+
+    <div class="chap">
+      <div class="head"><span class="cnum">05</span><span class="ctitle">Perceiving Surfaces Oriented in Depth</span></div>
+      <div class="concepts">
+        <div class="concept todo"><span class="mk">○</span><span>Motion parallax — depth from a moving viewpoint</span><span class="tag">FILM</span></div>
+        <div class="concept todo"><span class="mk">○</span><span>Shape from shading & cast shadows</span><span class="tag">FILM</span></div>
+        <div class="concept todo"><span class="mk">○</span><span>Binocular disparity & random-dot stereograms</span><span class="tag">FILM</span></div>
+      </div>
+    </div>
+
+    <div class="chap">
+      <div class="head"><span class="cnum">06</span><span class="ctitle">Organizing Objects and Scenes</span></div>
+      <div class="concepts">
+        <div class="concept has"><span class="mk">●</span><span><a href="/photon/gestalt-grouping.html">Gestalt grouping — proximity & similarity</a></span><span class="tag">GRAPH</span></div>
+        <div class="concept has"><span class="mk">●</span><span><a href="/photon/necker-flip.html">Figure/ground & multistability</a></span><span class="tag">GRAPH</span></div>
+        <div class="concept has"><span class="mk">●</span><span><a href="/photon/illusory-contours.html">Illusory contours & amodal completion</a></span><span class="tag">GRAPH</span></div>
+      </div>
+    </div>
+
+    <div class="chap">
+      <div class="head"><span class="cnum">07</span><span class="ctitle">Perceiving Object Properties and Parts</span></div>
+      <div class="concepts">
+        <div class="concept todo"><span class="mk">○</span><span>Size constancy & the Ames room</span><span class="tag">FILM</span></div>
+        <div class="concept todo"><span class="mk">○</span><span>Shape constancy / slant</span><span class="tag">FILM</span></div>
+      </div>
+    </div>
+
+    <div class="chap">
+      <div class="head"><span class="cnum">08</span><span class="ctitle">Representing Shape and Structure</span></div>
+      <div class="concepts">
+        <div class="concept todo"><span class="mk">○</span><span>Reference frames & the "tilted square / diamond"</span><span class="tag">GRAPH</span></div>
+        <div class="concept todo"><span class="mk">○</span><span>Skeletal / axis-based shape descriptions</span><span class="tag">STATIC</span></div>
+      </div>
+    </div>
+
+    <div class="chap">
+      <div class="head"><span class="cnum">09</span><span class="ctitle">Perceiving Function and Category</span></div>
+      <div class="concepts">
+        <div class="concept todo"><span class="mk">○</span><span>Geons / recognition-by-components</span><span class="tag">GRAPH</span></div>
+        <div class="concept todo"><span class="mk">○</span><span>Canonical perspective & viewpoint effects</span><span class="tag">FILM</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PART III -->
+  <section class="part">
+    <h2>Part III · Visual Dynamics</h2>
+
+    <div class="chap">
+      <div class="head"><span class="cnum">10</span><span class="ctitle">Perceiving Motion and Events</span></div>
+      <div class="concepts">
+        <div class="concept has"><span class="mk">●</span><span><a href="/photon/motion-aftereffect.html">Motion adaptation & the aftereffect</a></span><span class="tag">GRAPH</span></div>
+        <div class="concept todo"><span class="mk">○</span><span>Apparent motion, phi & the aperture problem</span><span class="tag">GRAPH</span></div>
+        <div class="concept todo"><span class="mk">○</span><span>Biological motion — the point-light walker</span><span class="tag">FILM</span></div>
+      </div>
+    </div>
+
+    <div class="chap">
+      <div class="head"><span class="cnum">11</span><span class="ctitle">Visual Selection: Eye Movements and Attention</span></div>
+      <div class="concepts">
+        <div class="concept todo"><span class="mk">○</span><span>Change blindness & inattentional blindness</span><span class="tag">GRAPH</span></div>
+        <div class="concept todo"><span class="mk">○</span><span>Visual search, pop-out & feature integration</span><span class="tag">GRAPH</span></div>
+        <div class="concept todo"><span class="mk">○</span><span>Saccades & scanpaths</span><span class="tag">FILM</span></div>
+      </div>
+    </div>
+
+    <div class="chap">
+      <div class="head"><span class="cnum">12</span><span class="ctitle">Visual Memory and Imagery</span></div>
+      <div class="concepts">
+        <div class="concept todo"><span class="mk">○</span><span>Iconic memory & the partial-report effect</span><span class="tag">GRAPH</span></div>
+        <div class="concept todo"><span class="mk">○</span><span>Mental rotation</span><span class="tag">GRAPH</span></div>
+      </div>
+    </div>
+
+    <div class="chap">
+      <div class="head"><span class="cnum">13</span><span class="ctitle">Visual Awareness</span></div>
+      <div class="concepts">
+        <div class="concept todo"><span class="mk">○</span><span>Binocular rivalry</span><span class="tag">GRAPH</span></div>
+        <div class="concept todo"><span class="mk">○</span><span>The construction thesis, restated — where the series closes</span><span class="tag medium">essay</span></div>
+      </div>
+    </div>
+  </section>
+
+  <p class="foot">
+    A companion, not a substitute — read Palmer. Interactive pieces by <a href="/photon/">@ciamac · Photon to Phenomenology</a>.<br>
+    <a class="backlink" href="/photon/">← the standalone gallery (all pieces, by impact)</a>
+  </p>
+</main>
+</body>
+</html>
