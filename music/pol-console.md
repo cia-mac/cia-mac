@@ -41,10 +41,10 @@ this is where you tell the machine which parts of the recording to use.
 
 - **hook** — the best two or three seconds of her voice: a held phrase, a
   melisma, the moment you keep returning to. drag on the waveform to mark the
-  region, then click **assign hook**. this becomes the emotional anchor — the
+  region, then click **selection → hook (vocal)**. this becomes the emotional anchor — the
   part the machine surfaces in breakdowns and calls back to throughout.
 - **texture** — a moment where the strings or orchestration breathe without
-  much percussion. drag a different region and click **assign texture**. the
+  much percussion. drag a different region and click **selection → texture (strings)**. the
   machine uses this as a background wash, a granular cloud, and a filtered
   stab — you won't recognize the source, but you'll feel it.
 - **how to drag**: click and hold on the waveform, drag left or right to span
