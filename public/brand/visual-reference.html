@@ -108,6 +108,10 @@ section { padding: var(--space-12) 0; border-bottom: 1px solid var(--rule); }
 .rules-list { max-width: var(--measure); list-style: none; margin-top: var(--space-5); }
 .rules-list li { padding: var(--space-2) 0; border-top: 1px solid var(--rule); font-size: var(--size-sm); color: var(--bone-2); }
 .rules-list li strong { color: var(--bone); font-weight: 500; }
+.weight-row { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); padding: var(--space-3) 0; border-top: 1px solid var(--rule); }
+.weight-row .wm-study { font-size: clamp(40px, 6vw, 88px); }
+.weight-row .weight-meta { display: flex; align-items: baseline; gap: var(--space-3); }
+.weight-row .lbl { font-family: var(--face-mono); font-size: 13px; color: var(--bone-3); letter-spacing: 0.08em; }
 
 /* ============ palette ============ */
 .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--gutter); }
@@ -245,6 +249,23 @@ section { padding: var(--space-12) 0; border-bottom: 1px solid var(--rule); }
         <li><strong>Case in prose stays lowercase:</strong> ciamac.com, “the ciamac brand”. Formal long form: Ciamac Parhizi.</li>
         <li><strong>currentColor only.</strong> NASA worm (1975) is the precedent for the missing stroke.</li>
       </ul>
+
+      <div class="divider-labeled" style="margin-top:var(--space-8)"><span class="lbl">Weight study · unresolved</span><span class="line"></span></div>
+      <p class="s-sm measure" style="margin-bottom:var(--space-5)">Thin (100) vs Light (200) vs Regular (400), at display scale and at the 20px chrome minimum. One weight must serve both.</p>
+
+      <div class="weight-row">
+        <span class="mark wm-study" aria-hidden="true" style="font-weight:100">CIΛMΛC</span>
+        <div class="weight-meta"><span class="lbl">Thin · 100</span><span class="mark" aria-hidden="true" style="font-weight:100;font-size:20px">CIΛMΛC</span><span class="lbl">20px chrome</span></div>
+      </div>
+      <div class="weight-row">
+        <span class="mark wm-study" aria-hidden="true" style="font-weight:200">CIΛMΛC</span>
+        <div class="weight-meta"><span class="lbl">Light · 200 — current lock</span><span class="mark" aria-hidden="true" style="font-weight:200;font-size:20px">CIΛMΛC</span><span class="lbl">20px chrome</span></div>
+      </div>
+      <div class="weight-row">
+        <span class="mark wm-study" aria-hidden="true" style="font-weight:400">CIΛMΛC</span>
+        <div class="weight-meta"><span class="lbl">Regular · 400</span><span class="mark" aria-hidden="true" style="font-size:20px">CIΛMΛC</span><span class="lbl">20px chrome</span></div>
+      </div>
+      <p class="note" style="margin-top:var(--space-3)">judge the 20px row on a non-retina screen too before locking — hairlines shimmer at 1x.</p>
     </div>
   </section>
 
