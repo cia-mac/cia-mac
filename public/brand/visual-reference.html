@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>visual reference · v2.1 · ciamac</title>
+<meta name="description" content="Visual reference for the ciamac style guide v2.1 — small-studio lock. Wordmark, palette, typography, components, rendered with the canonical tokens.">
+<style>
+/* ============ tokens.css (v2.1) ============ */
+:root {
+  --ink: #0b0b0c;
+  --ink-2: #141419;
+  --bone: #f4f1ea;
+  --bone-2: #bcb8ad;
+  --rule: #1a1a1d;
+  --accent: #6a83ad;
+  --accent-glow: #78b4ff;
+  /* semantic.css */
+  --bone-3: #7d8697;
+  --ok: #8fa0b8;
+  --bad: #8a7090;
+
+  --face-text: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --face-mono: 'SF Mono', ui-monospace, monospace;
+  --face-serif: 'Spectral', 'EB Garamond', Georgia, serif;
+
+  --size-display: clamp(72px, 10vw, 144px);
+  --size-h1: clamp(40px, 6vw, 88px);
+  --size-h2: clamp(26px, 2.8vw, 34px);
+  --size-body: 18px;
+  --size-sm: 15px;
+
+  --u: 8px;
+  --gutter: 24px;
+  --measure: 680px;
+  --container: 1680px;
+  --container-wide: 2400px;
+  --pad-side: 40px;
+  --pad-side-m: 24px;
+
+  --space-1: 8px;  --space-2: 16px; --space-3: 24px; --space-5: 40px;
+  --space-8: 64px; --space-12: 96px; --space-18: 144px;
+
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --cut: 0ms; --dissolve: 160ms; --crossfade: 240ms; --reveal: 400ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root { --cut: 0ms; --dissolve: 0ms; --crossfade: 0ms; --reveal: 0ms; }
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { background: var(--ink); }
+body {
+  font-family: var(--face-text);
+  font-size: var(--size-body);
+  font-weight: 400;
+  line-height: 1.65;
+  color: var(--bone-2);
+  background: var(--ink);
+  text-align: left;
+}
+h1, h2, h3 { color: var(--bone); }
+a { color: var(--bone); text-decoration: underline; text-underline-offset: 3px; transition: color var(--dissolve) var(--ease); }
+a:hover { color: var(--accent-glow); }
+:focus-visible { outline: 2px solid var(--accent-glow); outline-offset: 2px; }
+
+.skip-link { position: absolute; left: -9999px; top: 0; background: var(--accent); color: var(--ink); padding: var(--space-1) var(--space-2); z-index: 100; text-decoration: none; }
+.skip-link:focus { left: var(--space-2); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+.container { max-width: var(--container); margin: 0 auto; padding: 0 var(--pad-side); }
+.measure { max-width: var(--measure); }
+@media (max-width: 820px) { .container { padding: 0 var(--pad-side-m); } }
+
+/* ============ the mark ============ */
+/* Barless A — PREVIEW STAND-IN. The production mark must be cut as outlined
+   paths (§ 02.6). This preview sets the A as Greek capital Lambda (Λ), which
+   in Helvetica Neue is the A glyph without its crossbar. Marks are
+   aria-hidden with sr-only "CIAMAC" alongside where they carry meaning. */
+.mark { font-family: var(--face-text); font-weight: 200; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bone); line-height: 1; }
+
+/* ============ chrome ============ */
+.top-bar { padding: var(--space-3) 0; border-bottom: 1px solid var(--rule); position: sticky; top: 0; z-index: 10; background: rgba(11,11,12,0.92); backdrop-filter: blur(10px); }
+.top-bar .inner { display: flex; align-items: baseline; justify-content: space-between; gap: var(--gutter); }
+.top-bar .mark { font-size: 22px; }
+.top-bar .nav-links { display: flex; gap: var(--space-3); }
+.top-bar .nav-links a { font-family: var(--face-mono); font-size: var(--size-sm); letter-spacing: 0.12em; text-transform: uppercase; color: var(--bone-2); text-decoration: none; }
+.top-bar .nav-links a:hover, .top-bar .nav-links a[aria-current="page"] { color: var(--accent); }
+@media (max-width: 820px) { .top-bar .nav-links { display: none; } }
+
+.kicker { font-family: var(--face-mono); font-size: var(--size-sm); letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: var(--space-2); }
+
+section { padding: var(--space-12) 0; border-bottom: 1px solid var(--rule); }
+.section-head { font-size: var(--size-h2); font-weight: 400; letter-spacing: -0.01em; line-height: 1.15; margin-bottom: var(--space-5); }
+.note { font-family: var(--face-mono); font-size: 13px; color: var(--bone-3); letter-spacing: 0.04em; }
+
+/* ============ hero ============ */
+.hero { padding: var(--space-12) 0 var(--space-8); border-bottom: 1px solid var(--rule); }
+.hero h1 { font-size: var(--size-h1); font-weight: 200; letter-spacing: -0.025em; line-height: 1.05; margin-bottom: var(--space-3); }
+.hero .lead { max-width: var(--measure); color: var(--bone-2); }
+.hero .meta { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-3); font-family: var(--face-mono); font-size: var(--size-sm); color: var(--bone-3); letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* ============ wordmark section ============ */
+.mark-hero { font-size: clamp(56px, 9vw, 132px); margin: var(--space-5) 0; }
+.mark-sizes { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--space-8); margin-top: var(--space-5); }
+.mark-sizes .demo { display: flex; flex-direction: column; gap: var(--space-2); }
+.mark-sizes .lbl { font-family: var(--face-mono); font-size: 13px; color: var(--bone-3); letter-spacing: 0.08em; }
+.rules-list { max-width: var(--measure); list-style: none; margin-top: var(--space-5); }
+.rules-list li { padding: var(--space-2) 0; border-top: 1px solid var(--rule); font-size: var(--size-sm); color: var(--bone-2); }
+.rules-list li strong { color: var(--bone); font-weight: 500; }
+.weight-row { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); padding: var(--space-3) 0; border-top: 1px solid var(--rule); }
+.weight-row .wm-study { font-size: clamp(40px, 6vw, 88px); }
+.weight-row .weight-meta { display: flex; align-items: baseline; gap: var(--space-3); }
+.weight-row .lbl { font-family: var(--face-mono); font-size: 13px; color: var(--bone-3); letter-spacing: 0.08em; }
+.fav-row { display: flex; flex-wrap: wrap; gap: var(--space-8); }
+.fav-demo { display: flex; align-items: center; gap: var(--space-2); }
+.fav-demo .lbl { font-family: var(--face-mono); font-size: 13px; color: var(--bone-3); letter-spacing: 0.08em; }
+.fav-chip { display: inline-flex; align-items: center; justify-content: center; background: var(--ink); border: 1px solid var(--rule); overflow: hidden; }
+.fav-32 { width: 32px; height: 32px; }
+.fav-16 { width: 16px; height: 16px; }
+.fav-round { border-radius: 50%; }
+
+/* ============ palette ============ */
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--gutter); }
+.swatch { border: 1px solid var(--rule); }
+.swatch .chip { height: 112px; }
+.swatch .info { padding: var(--space-2); background: var(--ink-2); }
+.swatch .tok { font-family: var(--face-mono); font-size: var(--size-sm); color: var(--bone); }
+.swatch .hex { font-family: var(--face-mono); font-size: 13px; color: var(--bone-3); letter-spacing: 0.06em; }
+.swatch .role { font-size: 13px; color: var(--bone-2); margin-top: 2px; line-height: 1.5; }
+
+/* ============ type scale ============ */
+.spec { border-top: 1px solid var(--rule); padding: var(--space-5) 0; display: grid; grid-template-columns: 220px 1fr; gap: var(--gutter); align-items: baseline; }
+.spec .lbl { font-family: var(--face-mono); font-size: 13px; color: var(--bone-3); letter-spacing: 0.06em; line-height: 1.8; }
+.spec .sample { color: var(--bone); overflow-wrap: anywhere; }
+@media (max-width: 820px) { .spec { grid-template-columns: 1fr; } }
+.s-display { font-size: var(--size-display); font-weight: 100; line-height: 1.0; letter-spacing: -0.04em; }
+.s-h1 { font-size: var(--size-h1); font-weight: 200; line-height: 1.05; letter-spacing: -0.025em; }
+.s-h2 { font-size: var(--size-h2); font-weight: 400; line-height: 1.15; letter-spacing: -0.01em; }
+.s-body { font-size: var(--size-body); font-weight: 400; line-height: 1.65; max-width: var(--measure); color: var(--bone-2); }
+.s-sm { font-size: var(--size-sm); line-height: 1.6; color: var(--bone-2); max-width: var(--measure); }
+.s-mono { font-family: var(--face-mono); font-size: var(--size-sm); letter-spacing: 0.12em; text-transform: uppercase; color: var(--bone-2); }
+.s-book { font-family: var(--face-serif); font-size: 19px; line-height: 1.75; max-width: var(--measure); color: var(--bone-2); }
+
+/* ============ components ============ */
+.comp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-5); align-items: start; }
+.comp { border: 1px solid var(--rule); padding: var(--space-5); }
+.comp > .lbl { font-family: var(--face-mono); font-size: 13px; color: var(--bone-3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: var(--space-3); display: block; }
+
+.btn { display: inline-block; padding: var(--space-2) var(--space-3); font-family: var(--face-text); font-size: var(--size-sm); font-weight: 400; letter-spacing: 0.04em; line-height: 1; text-decoration: none; text-align: left; cursor: pointer; border: 1px solid var(--accent); background: transparent; color: var(--bone); transition: color var(--dissolve) var(--ease), background-color var(--dissolve) var(--ease), border-color var(--dissolve) var(--ease); }
+.btn:hover { border-color: var(--accent-glow); color: var(--accent-glow); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+.btn-solid { background: var(--accent); color: var(--ink); border-color: var(--accent); }
+.btn-solid:hover { background: var(--accent-glow); border-color: var(--accent-glow); color: var(--ink); }
+.btn-ghost { border-color: var(--rule); color: var(--bone-2); }
+.btn-ghost:hover { border-color: var(--bone-2); color: var(--bone); }
+.btn-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.card { background: var(--ink-2); border: 1px solid var(--rule); padding: var(--space-5); }
+.card-emphasis { border-left: 2px solid var(--accent); padding-left: calc(var(--space-5) - 2px); }
+.card .kicker { font-family: var(--face-mono); font-size: var(--size-sm); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: var(--space-2); }
+.card h3 { font-size: 17px; font-weight: 500; color: var(--bone); margin-bottom: var(--space-2); }
+.card p { font-size: var(--size-sm); color: var(--bone-2); line-height: 1.6; }
+
+.divider-labeled { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-5) 0; }
+.divider-labeled .lbl { font-family: var(--face-mono); font-size: var(--size-sm); letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); }
+.divider-labeled .line { flex: 1; height: 1px; background: var(--rule); }
+
+.back-link { color: var(--bone-2); text-decoration: none; font-size: var(--size-sm); transition: color var(--dissolve) var(--ease); }
+.back-link:hover { color: var(--bone); }
+
+.tile { display: block; color: inherit; text-decoration: none; background: var(--ink-2); border: 1px solid var(--rule); transition: transform var(--dissolve) var(--ease); max-width: 420px; }
+.tile:hover { transform: translateY(-2px); }
+.tile:hover h3 { color: var(--accent-glow); }
+.tile-thumb { aspect-ratio: 16 / 9; background: var(--ink); display: flex; align-items: center; justify-content: center; }
+.tile-meta { padding: var(--space-3); }
+.tile-meta .kicker { margin-bottom: var(--space-1); font-family: var(--face-mono); font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+.tile-meta h3 { font-size: 18px; font-weight: 400; color: var(--bone); transition: color var(--dissolve) var(--ease); letter-spacing: -0.01em; line-height: 1.3; }
+
+.form { max-width: var(--measure); }
+.field { margin-bottom: var(--space-3); }
+.field label { display: block; font-family: var(--face-mono); font-size: var(--size-sm); color: var(--bone-2); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: var(--space-1); }
+.field input, .field textarea { display: block; width: 100%; background: var(--ink-2); border: 1px solid var(--rule); color: var(--bone); padding: var(--space-2); font-family: var(--face-text); font-size: var(--size-body); line-height: 1.5; transition: border-color var(--dissolve) var(--ease); }
+.field input:focus, .field textarea:focus { outline: none; border-color: var(--accent-glow); box-shadow: 0 0 0 3px rgba(120, 180, 255, 0.15); }
+.field-error { font-size: var(--size-sm); color: var(--bad); margin-top: var(--space-1); min-height: 1.5em; }
+
+/* ============ states ============ */
+.state-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-5); }
+.state { border: 1px solid var(--rule); padding: var(--space-5); background: var(--ink-2); }
+.state .kicker { font-family: var(--face-mono); font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: var(--space-2); }
+.state h3 { font-size: var(--size-h2); font-weight: 200; letter-spacing: -0.01em; margin-bottom: var(--space-2); }
+.state p { font-size: var(--size-sm); color: var(--bone-2); }
+.state .action { margin-top: var(--space-3); font-size: var(--size-sm); }
+
+/* ============ end card ============ */
+.end-card { padding: var(--space-18) 0 var(--space-12); }
+.end-card .mark { font-size: 40px; margin-bottom: var(--space-5); }
+.credits { max-width: var(--measure); margin-top: var(--space-5); padding-top: var(--space-5); border-top: 1px solid var(--rule); }
+.credits-primary { font-size: var(--size-body); color: var(--bone); margin-bottom: 6px; }
+.credits-secondary { font-size: var(--size-sm); color: var(--bone-2); line-height: 1.8; }
+</style>
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to content</a>
+
+<header class="top-bar">
+  <div class="container inner">
+    <span class="mark" aria-hidden="true">CIΛMΛC</span><span class="sr-only">CIAMAC</span>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#wordmark">Mark</a>
+      <a href="#palette">Palette</a>
+      <a href="#type">Type</a>
+      <a href="#components">Components</a>
+      <a href="#states">States</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+
+  <div class="hero">
+    <div class="container">
+      <p class="kicker">Style guide · visual reference</p>
+      <h1>v2.1 · small-studio lock</h1>
+      <p class="lead measure">The rigor of a design system, carried in the voice of one person. Register walked back from institutional; wordmark locked uppercase with the barless A. Everything on this page is rendered with the canonical tokens.</p>
+      <div class="meta">
+        <span>2026-06-11</span><span>Los Angeles</span><span>Caspian #6a83ad</span><span>Helvetica Neue Light</span>
+      </div>
+    </div>
+  </div>
+
+  <section id="wordmark">
+    <div class="container">
+      <p class="kicker">§ 02 · Wordmark</p>
+      <h2 class="section-head">One mark. Uppercase. Barless A.</h2>
+      <div class="mark-hero mark" aria-hidden="true">CIΛMΛC</div><span class="sr-only">CIAMAC</span>
+      <p class="note">⚠ barless A previewed with Greek capital Lambda (Λ — the Helvetica A minus its crossbar) — production mark is cut as outlined paths (§ 02.6). letter-spacing 0.08em provisional.</p>
+      <div class="mark-sizes">
+        <div class="demo">
+          <span class="mark" aria-hidden="true" style="font-size:48px">CIΛMΛC</span>
+          <span class="lbl">48px · display minimum</span>
+        </div>
+        <div class="demo">
+          <span class="mark" aria-hidden="true" style="font-size:20px">CIΛMΛC</span>
+          <span class="lbl">20px · chrome minimum</span>
+        </div>
+        <div class="demo">
+          <span class="mark" aria-hidden="true" style="font-size:9px">CIΛMΛC</span>
+          <span class="lbl">favicon scale · compression accepted</span>
+        </div>
+      </div>
+      <ul class="rules-list measure">
+        <li><strong>One line.</strong> Never stack or break. Uniform Light (200) weight — no letter emphasis.</li>
+        <li><strong>The barless A lives only in the mark.</strong> Never in running text, headings, or labels.</li>
+        <li><strong>No monogram.</strong> No standalone symbol, no “CIA” mark. The wordmark is the mark at every size.</li>
+        <li><strong>Case in prose stays lowercase:</strong> ciamac.com, “the ciamac brand”. Formal long form: Ciamac Parhizi.</li>
+        <li><strong>currentColor only.</strong> NASA worm (1975) is the precedent for the missing stroke.</li>
+      </ul>
+
+      <div class="divider-labeled" style="margin-top:var(--space-8)"><span class="lbl">Weight study · resolved — Light 200</span><span class="line"></span></div>
+      <p class="s-sm measure" style="margin-bottom:var(--space-5)">Thin (100) vs Light (200) vs Regular (400), at display scale and at the 20px chrome minimum. One weight must serve both. <strong style="color:var(--bone);font-weight:500">Locked 2026-06-11: Light 200</strong> — keeps Thin's airiness at display scale, survives chrome sizes and the Arial fallback.</p>
+
+      <div class="weight-row">
+        <span class="mark wm-study" aria-hidden="true" style="font-weight:100">CIΛMΛC</span>
+        <div class="weight-meta"><span class="lbl">Thin · 100</span><span class="mark" aria-hidden="true" style="font-weight:100;font-size:20px">CIΛMΛC</span><span class="lbl">20px chrome</span></div>
+      </div>
+      <div class="weight-row">
+        <span class="mark wm-study" aria-hidden="true" style="font-weight:200">CIΛMΛC</span>
+        <div class="weight-meta"><span class="lbl">Light · 200 — locked</span><span class="mark" aria-hidden="true" style="font-weight:200;font-size:20px">CIΛMΛC</span><span class="lbl">20px chrome</span></div>
+      </div>
+      <div class="weight-row">
+        <span class="mark wm-study" aria-hidden="true" style="font-weight:400">CIΛMΛC</span>
+        <div class="weight-meta"><span class="lbl">Regular · 400</span><span class="mark" aria-hidden="true" style="font-size:20px">CIΛMΛC</span><span class="lbl">20px chrome</span></div>
+      </div>
+      <p class="note" style="margin-top:var(--space-3)">judge the 20px row on a non-retina screen too before locking — hairlines shimmer at 1x.</p>
+
+      <div class="divider-labeled" style="margin-top:var(--space-8)"><span class="lbl">Favicon study · unresolved</span><span class="line"></span></div>
+      <p class="s-sm measure" style="margin-bottom:var(--space-5)">Option B as locked (§ 02.3): the full wordmark is the favicon, compression accepted — no monogram. Alternative below revives Option A's standalone Λ symbol (the Food for Art icon is already a barless A in a circle). Choosing it would amend § 02.3.</p>
+      <div class="fav-row">
+        <div class="fav-demo">
+          <span class="fav-chip fav-32"><span class="mark" aria-hidden="true" style="font-size:7px">CIΛMΛC</span></span>
+          <span class="fav-chip fav-16"><span class="mark" aria-hidden="true" style="font-size:4px">CIΛMΛC</span></span>
+          <span class="lbl">current spec · full wordmark · 32 / 16px</span>
+        </div>
+        <div class="fav-demo">
+          <span class="fav-chip fav-32 fav-round"><span class="mark" aria-hidden="true" style="font-size:22px">Λ</span></span>
+          <span class="fav-chip fav-16 fav-round"><span class="mark" aria-hidden="true" style="font-size:11px">Λ</span></span>
+          <span class="lbl">option A revival · Λ symbol · 32 / 16px · would amend § 02.3</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="palette">
+    <div class="container">
+      <p class="kicker">§ 03 · Palette</p>
+      <h2 class="section-head">Ink, bone, and the Caspian.</h2>
+      <div class="swatches">
+        <div class="swatch"><div class="chip" style="background:#0b0b0c"></div><div class="info"><div class="tok">--ink</div><div class="hex">#0b0b0c</div><div class="role">base background</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#141419"></div><div class="info"><div class="tok">--ink-2</div><div class="hex">#141419</div><div class="role">elevated surface</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#f4f1ea"></div><div class="info"><div class="tok">--bone</div><div class="hex">#f4f1ea</div><div class="role">primary text, wordmark · AAA</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#bcb8ad"></div><div class="info"><div class="tok">--bone-2</div><div class="hex">#bcb8ad</div><div class="role">secondary text, body · AAA</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#1a1a1d"></div><div class="info"><div class="tok">--rule</div><div class="hex">#1a1a1d</div><div class="role">dividers, 1px borders</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#6a83ad"></div><div class="info"><div class="tok">--accent</div><div class="hex">#6a83ad</div><div class="role">Caspian — primary accent · AA · 1962 Ford Falcon</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#78b4ff"></div><div class="info"><div class="tok">--accent-glow</div><div class="hex">#78b4ff</div><div class="role">hover, focus only. NEVER static</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#7d8697"></div><div class="info"><div class="tok">--bone-3</div><div class="hex">#7d8697</div><div class="role">tertiary text · AA</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#8fa0b8"></div><div class="info"><div class="tok">--ok</div><div class="hex">#8fa0b8</div><div class="role">form success · AA</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#8a7090"></div><div class="info"><div class="tok">--bad</div><div class="hex">#8a7090</div><div class="role">form error · AA</div></div></div>
+      </div>
+      <p class="note" style="margin-top:var(--space-3)">killed, do not reintroduce: #ffd94d · #6a9a8a as accent · #556f9e · tech blues · neon · gradients</p>
+    </div>
+  </section>
+
+  <section id="type">
+    <div class="container">
+      <p class="kicker">§ 04 · Typography</p>
+      <h2 class="section-head">Five tiers. Nothing above 500.</h2>
+      <div class="spec"><div class="lbl">--size-display<br>clamp(72–144) · 100 · -0.04em</div><div class="sample s-display">Dusk falls</div></div>
+      <div class="spec"><div class="lbl">--size-h1<br>clamp(40–88) · 200 · -0.025em</div><div class="sample s-h1">Page title</div></div>
+      <div class="spec"><div class="lbl">--size-h2<br>clamp(26–34) · 400 · -0.01em</div><div class="sample s-h2">Section heading</div></div>
+      <div class="spec"><div class="lbl">--size-body<br>18px · 400 · lh 1.65</div><div class="sample s-body">Body prose sits at eighteen pixels, bone-2 on ink, capped at the 680px measure. Flush-left, never justified, never centered. Quiet, not empty.</div></div>
+      <div class="spec"><div class="lbl">--size-sm<br>15px · 400 · lh 1.6</div><div class="sample s-sm">Captions and secondary notes run at fifteen pixels.</div></div>
+      <div class="spec"><div class="lbl">mono label<br>SF Mono · 0.12em · uppercase</div><div class="sample s-mono">Kicker · Metadata · 2026-06-11</div></div>
+      <div class="spec"><div class="lbl">book mode<br>Spectral · 19px · lh 1.75</div><div class="sample s-book">Long-form reading swaps to the serif — a structural nod to Persian modernism, not a linguistic one.</div></div>
+    </div>
+  </section>
+
+  <section id="components">
+    <div class="container">
+      <p class="kicker">§ 08–09 · Components</p>
+      <h2 class="section-head">Reference set, hover to see the glow.</h2>
+      <div class="comp-grid">
+        <div class="comp">
+          <span class="lbl">Buttons</span>
+          <div class="btn-row">
+            <button class="btn">default</button>
+            <button class="btn btn-solid">solid</button>
+            <button class="btn btn-ghost">ghost</button>
+            <button class="btn" disabled>disabled</button>
+          </div>
+        </div>
+        <div class="comp">
+          <span class="lbl">Card · emphasis</span>
+          <div class="card card-emphasis on-ink2">
+            <p class="kicker">Field note</p>
+            <h3>Gaussian splat pipeline</h3>
+            <p>Cards sit on ink-2 with a rule border. Emphasis takes a 2px Caspian left edge.</p>
+          </div>
+        </div>
+        <div class="comp">
+          <span class="lbl">Gallery tile</span>
+          <a class="tile" href="#components">
+            <div class="tile-thumb" aria-hidden="true"><span class="mark" style="font-size:18px;color:var(--bone-3)">CIΛMΛC</span></div>
+            <div class="tile-meta">
+              <p class="kicker">Film · 2026</p>
+              <h3>Title of the work</h3>
+            </div>
+          </a>
+        </div>
+        <div class="comp">
+          <span class="lbl">Form</span>
+          <form class="form" novalidate>
+            <div class="field">
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" autocomplete="email">
+              <div class="field-error" aria-live="polite"></div>
+            </div>
+            <button type="submit" class="btn btn-solid">send</button>
+          </form>
+        </div>
+        <div class="comp">
+          <span class="lbl">Divider · labeled</span>
+          <div class="divider-labeled"><span class="lbl">2026</span><span class="line"></span></div>
+          <a class="back-link" href="#main">← back to top</a>
+        </div>
+        <div class="comp">
+          <span class="lbl">Motion tokens</span>
+          <p class="s-sm">cut 0ms · dissolve 160ms · crossfade 240ms · reveal 400ms.<br>No bounce. No spring. No stagger. No parallax.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="states">
+    <div class="container">
+      <p class="kicker">§ 09.4 · States</p>
+      <h2 class="section-head">Errors stay in character.</h2>
+      <div class="state-grid">
+        <div class="state on-ink2">
+          <p class="kicker">404 · Not found</p>
+          <h3>This isn't the way.</h3>
+          <p>The page you're looking for moved or never existed.</p>
+          <p class="action"><a href="#main">back to /</a></p>
+        </div>
+        <div class="state on-ink2">
+          <p class="kicker">500 · Something broke</p>
+          <h3>Give it a moment.</h3>
+          <p>Something on our end hiccuped. Try again.</p>
+          <p class="action"><a href="#main">retry</a> · <a href="mailto:i@ciamac.com">i@ciamac.com</a></p>
+        </div>
+        <div class="state on-ink2">
+          <p class="kicker">Offline</p>
+          <h3>No signal.</h3>
+          <p>You're not connected.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="end-card">
+    <div class="container">
+      <div class="mark" aria-hidden="true">CIΛMΛC</div><span class="sr-only">CIAMAC</span>
+      <p class="s-sm measure">A curated personal archive with functional utility. The door is always open: <a href="mailto:i@ciamac.com">i@ciamac.com</a></p>
+      <div class="credits">
+        <div class="credits-primary">Ciamac Parhizi</div>
+        <div class="credits-secondary">style guide v2.1 · 2026-06-11 · Los Angeles</div>
+      </div>
+    </div>
+  </footer>
+
+</main>
+</body>
+</html>
