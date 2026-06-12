@@ -112,6 +112,13 @@ section { padding: var(--space-12) 0; border-bottom: 1px solid var(--rule); }
 .weight-row .wm-study { font-size: clamp(40px, 6vw, 88px); }
 .weight-row .weight-meta { display: flex; align-items: baseline; gap: var(--space-3); }
 .weight-row .lbl { font-family: var(--face-mono); font-size: 13px; color: var(--bone-3); letter-spacing: 0.08em; }
+.fav-row { display: flex; flex-wrap: wrap; gap: var(--space-8); }
+.fav-demo { display: flex; align-items: center; gap: var(--space-2); }
+.fav-demo .lbl { font-family: var(--face-mono); font-size: 13px; color: var(--bone-3); letter-spacing: 0.08em; }
+.fav-chip { display: inline-flex; align-items: center; justify-content: center; background: var(--ink); border: 1px solid var(--rule); overflow: hidden; }
+.fav-32 { width: 32px; height: 32px; }
+.fav-16 { width: 16px; height: 16px; }
+.fav-round { border-radius: 50%; }
 
 /* ============ palette ============ */
 .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--gutter); }
@@ -266,6 +273,21 @@ section { padding: var(--space-12) 0; border-bottom: 1px solid var(--rule); }
         <div class="weight-meta"><span class="lbl">Regular · 400</span><span class="mark" aria-hidden="true" style="font-size:20px">CIΛMΛC</span><span class="lbl">20px chrome</span></div>
       </div>
       <p class="note" style="margin-top:var(--space-3)">judge the 20px row on a non-retina screen too before locking — hairlines shimmer at 1x.</p>
+
+      <div class="divider-labeled" style="margin-top:var(--space-8)"><span class="lbl">Favicon study · unresolved</span><span class="line"></span></div>
+      <p class="s-sm measure" style="margin-bottom:var(--space-5)">Option B as locked (§ 02.3): the full wordmark is the favicon, compression accepted — no monogram. Alternative below revives Option A's standalone Λ symbol (the Food for Art icon is already a barless A in a circle). Choosing it would amend § 02.3.</p>
+      <div class="fav-row">
+        <div class="fav-demo">
+          <span class="fav-chip fav-32"><span class="mark" aria-hidden="true" style="font-size:7px">CIΛMΛC</span></span>
+          <span class="fav-chip fav-16"><span class="mark" aria-hidden="true" style="font-size:4px">CIΛMΛC</span></span>
+          <span class="lbl">current spec · full wordmark · 32 / 16px</span>
+        </div>
+        <div class="fav-demo">
+          <span class="fav-chip fav-32 fav-round"><span class="mark" aria-hidden="true" style="font-size:22px">Λ</span></span>
+          <span class="fav-chip fav-16 fav-round"><span class="mark" aria-hidden="true" style="font-size:11px">Λ</span></span>
+          <span class="lbl">option A revival · Λ symbol · 32 / 16px · would amend § 02.3</span>
+        </div>
+      </div>
     </div>
   </section>
 
