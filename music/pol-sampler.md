@@ -29,9 +29,22 @@ them — over a simple beat if you want one. the machine does nothing on its own
    deep / swing / techno — set the tempo, mute pieces you don't want. the
    beat never starts by itself. drums are key-neutral so nothing clashes;
    add the bass note only if you want it, and choose the note by ear.
-6. **record:** press **b** (or click ● record). everything you perform —
-   beat, pads, even auditioning the original — is captured to a real WAV in
-   your downloads (`sampler-take-01.wav`). press **b** again to stop and save.
+6. **play in time (quantize):** with the beat running, set **quantize** to
+   1/16 (or 1/8, 1/4). now when you hit a pad it waits and lands on the grid,
+   so your playing is in time even if your finger isn't. set it to **off** to
+   play loose/free.
+7. **program a loop (sequence):** this is the real remix-builder. the
+   **sequence** panel is a grid — 8 rows (your pads) × 16 steps (one bar).
+   click cells to place hits: a vocal chop on step 1, a stab on the off-beat,
+   a breath here and there. press **sequence: on** and it loops in time with
+   the beat, a light sweeping across the steps so you can see the position.
+   you place every hit — nothing arranges itself. empty pads are skipped.
+8. **record:** press **b** (or click ● record). with **count-in** on (default)
+   you get one bar of clicks first so the downbeat is clean, then everything —
+   beat, sequence, pads you play live, even auditioning — is captured to a
+   real WAV in your downloads (`sampler-take-01.wav`). the **bar.beat** readout
+   and the **metronome** checkbox help you stay on the grid. press **b** again
+   to stop and save.
 
 ## the two tools together
 

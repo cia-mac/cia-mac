@@ -53,6 +53,18 @@
   /* beat */
   .beat-row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:10px; }
 
+  /* sequencer */
+  button#seqToggle.on{ border-color:var(--teal); color:var(--teal); }
+  .seq-row{ display:flex; align-items:center; gap:3px; margin-bottom:4px; }
+  .seq-label{ width:74px; flex:0 0 74px; font-size:10px; letter-spacing:.08em; color:var(--dim); cursor:pointer; user-select:none; padding:3px 4px; border:1px solid var(--line); text-align:left; font-variant-numeric:tabular-nums; }
+  .seq-label:hover{ border-color:var(--dim); color:var(--fg); }
+  .seq-label.empty{ opacity:.45; }
+  .seq-cells{ display:flex; gap:3px; flex:1; }
+  .seq-cell{ flex:1; height:22px; border:1px solid var(--line); cursor:pointer; padding:0; background:none; min-width:0; }
+  .seq-cell:hover{ border-color:var(--dim); }
+  .seq-cell.grp{ margin-left:7px; }
+  .seq-cell.playhead{ box-shadow:inset 0 0 0 1px rgba(232,230,225,.55); }
+
   /* transport */
   #posDisplay{ font-variant-numeric:tabular-nums; font-size:13px; letter-spacing:.1em; color:var(--gold); min-width:80px; }
   .note{ color:var(--dim); font-size:11px; line-height:1.7; margin-top:22px; letter-spacing:.04em; }
@@ -86,9 +98,20 @@
   <div id="padGrid"></div>
 </div>
 
+<!-- PANEL 2.5: SEQUENCE -->
+<div class="panel">
+  <h2>sequence <span style="float:right;font-size:9px">click cells to place hits · click a row label to audition · empty pads do nothing</span></h2>
+  <div class="row" style="margin-top:0">
+    <button id="seqToggle">sequence: off</button>
+    <button id="seqClear">clear</button>
+    <span style="font-size:11px;color:var(--dim);letter-spacing:.1em">1 bar · 16 steps · pads with no region are skipped</span>
+  </div>
+  <div id="seqGridEl" style="margin-top:12px"></div>
+</div>
+
 <!-- PANEL 3: BEAT -->
 <div class="panel">
-  <h2>beat <span style="float:right;font-size:9px">space = beat toggle</span></h2>
+  <h2>beat <span style="float:right;font-size:9px">space = beat toggle · quantize snaps live pad hits</span></h2>
   <div class="beat-row">
     <button id="beatToggle">beat: off</button>
     <label>bpm <input type="number" id="bpmInput" min="60" max="160" value="114"></label>
@@ -98,6 +121,14 @@
       <option value="swing">swing</option>
       <option value="techno">techno</option>
     </select>
+    <label>quantize
+      <select id="quantSelect">
+        <option value="off">off</option>
+        <option value="1/4">1/4</option>
+        <option value="1/8">1/8</option>
+        <option value="1/16" selected>1/16</option>
+      </select>
+    </label>
     <label><input type="checkbox" id="mutKick" checked> kick</label>
     <label><input type="checkbox" id="mutHats" checked> hats</label>
     <label><input type="checkbox" id="mutPerc" checked> perc</label>
@@ -126,6 +157,8 @@
   <div class="row">
     <button id="rec">● record</button>
     <span id="posDisplay">—</span>
+    <label><input type="checkbox" id="metroCheck"> metronome</label>
+    <label><input type="checkbox" id="countInCheck" checked> count-in</label>
     <label>master vol <input type="range" id="masterVol" min="0" max="1" step=".01" value=".9"></label>
     <label>space reverb <input type="range" id="spaceSlider" min="0" max="1" step=".01" value=".15"></label>
     <span id="savenote"></span>
@@ -146,7 +179,7 @@ let ctx = null;
 let buf = null; // decoded AudioBuffer
 
 /* Graph nodes */
-let masterGain, padBus, beatBus, comp, revConv, revIn, revOut, recProc, recSink;
+let masterGain, padBus, beatBus, comp, revConv, revIn, revOut, recProc, recSink, metroBus;
 
 /* Reverb */
 function makeIR(c, sec) {
@@ -173,8 +206,11 @@ function initAudio() {
   comp.attack.value = 0.004; comp.release.value = 0.18;
   padBus = ctx.createGain(); padBus.gain.value = 1;
   beatBus = ctx.createGain(); beatBus.gain.value = 0.8;
+  // metronome routes through beatBus so beat-vol affects it; audible with beat off
+  metroBus = ctx.createGain(); metroBus.gain.value = 0.85;
   padBus.connect(masterGain);
   beatBus.connect(masterGain);
+  metroBus.connect(beatBus);
   masterGain.connect(comp).connect(ctx.destination);
   // Reverb send: padBus → revIn → revConv → revOut → masterGain
   revConv = ctx.createConvolver(); revConv.buffer = makeIR(ctx, 2.4);
@@ -209,7 +245,40 @@ function setupRecorder() {
   recProc.connect(recSink).connect(ctx.destination);
 }
 
-function startRecording() {
+/* Entry point from the record button / b key. Handles count-in. */
+function requestRecord() {
+  initAudio(); resumeCtx();
+  if (recording || pendingRecord) return;
+  if (countInOn) {
+    // one bar of metronome clicks before capture arms
+    pendingRecord = true;
+    if (!transportOn) startTransport(true);   // align count-in to a fresh bar
+    countInRemaining = 16;                     // one bar of 16th steps from the next scheduled step
+    document.getElementById('rec').classList.add('armed');
+    document.getElementById('rec').textContent = 'counting in…';
+  } else {
+    beginCapture();
+  }
+}
+
+/* Cancel a pending count-in (user hit record again before capture armed). */
+function cancelCountIn() {
+  pendingRecord = false;
+  countInRemaining = 0;
+  document.getElementById('rec').classList.remove('armed');
+  document.getElementById('rec').textContent = '● record';
+  maybeStopTransport();
+}
+
+/* Called by the scheduler when the count-in bar completes. */
+function armCaptureAfterCountIn() {
+  if (!pendingRecord) return;
+  pendingRecord = false;
+  beginCapture();
+}
+
+/* Actually start capturing into the WAV buffers. */
+function beginCapture() {
   initAudio(); resumeCtx();
   if (recording) return;
   recL = []; recR = []; recLen = 0; recording = true; recStart = Date.now();
@@ -221,11 +290,14 @@ function startRecording() {
     document.getElementById('rec').textContent = `■ stop rec (${mm}:${ss})`;
   }, 250);
 }
+function startRecording() { requestRecord(); }
 function finalizeRecording() {
   if (!recording) return;
   recording = false; clearInterval(recTimer); recTimer = null;
   document.getElementById('rec').classList.remove('armed');
   document.getElementById('rec').textContent = '● record';
+  // a count-in-only take may have left the clock running solely for us
+  if (typeof maybeStopTransport === 'function') maybeStopTransport();
   if (recLen === 0) return;
   const sr = ctx.sampleRate, len = recLen;
   const L = new Float32Array(len), R = new Float32Array(len);
@@ -520,6 +592,11 @@ const pads = Array.from({ length: 8 }, (_, i) => ({
 
 let armedPad = 0;
 
+/* ---- step sequencer state: 8 rows × 16 steps ---- */
+let seqOn = false;
+const seqGrid = Array.from({ length: 8 }, () => new Array(16).fill(false));
+let seqHighlightStep = -1;
+
 function armPad(i) {
   armedPad = i;
   for (let j = 0; j < 8; j++) {
@@ -547,6 +624,7 @@ function updatePadDisplay(i) {
       regionEl.textContent = 'empty';
     }
   }
+  paintSeqLabel(i);
   drawAll();
 }
 
@@ -565,16 +643,43 @@ function stopPad(i, fade) {
   }
 }
 
-function triggerPad(i) {
+/* Compute the ctx time of the next quantize-grid boundary on the shared
+   clock. `grid` = steps per quantize unit (1=1/16, 2=1/8, 4=1/4). Returns a
+   time strictly in the future (>= currentTime + epsilon); skips a boundary
+   that is essentially now to the following one. */
+function nextGridTime(grid) {
+  const EPS = 0.005;
+  const sd = stepDur();
+  const minT = ctx.currentTime + EPS;
+  // stepNextT is the next unswung step boundary; stepGlobal is its index.
+  let idx = stepGlobal;       // index that lands at stepNextT
+  let t = stepNextT;
+  // advance to the next boundary aligned to `grid`, strictly in the future
+  while (true) {
+    if (idx % grid === 0 && t >= minT) return t;
+    idx++;
+    t += sd;
+  }
+}
+
+function quantizeGridSteps() {
+  switch (document.getElementById('quantSelect').value) {
+    case '1/4': return 4;
+    case '1/8': return 2;
+    case '1/16': return 1;
+    default: return 0; // off
+  }
+}
+
+/* Live pad trigger via the choke path, scheduled at ctx time `when`. */
+function triggerPadAt(i, when) {
   if (!buf || !ctx) return;
-  resumeCtx();
   const p = pads[i];
   if (!p.region) return;
 
   if (p.loop && p.looping) {
-    // retrigger of looping pad = stop
+    // retrigger of looping pad = stop (quantized)
     stopPad(i, 0.01);
-    flashPad(i);
     return;
   }
 
@@ -597,14 +702,15 @@ function triggerPad(i) {
     src.loop = true;
     src.loopStart = p.region.start;
     src.loopEnd = p.region.start + p.region.len;
-    src.start(ctx.currentTime, p.region.start);
+    src.start(when, p.region.start);
     p.looping = true;
     src.onended = () => { if (p.currentSrc === src) { p.currentSrc = null; p.currentGain = null; p.looping = false; } };
   } else {
     const durBuf = p.region.len;        // buffer-time seconds
     const outDur = durBuf / rate;       // audible duration at this pitch
-    const t0 = ctx.currentTime;
+    const t0 = when;
     // declick: 3ms attack, 8ms release at the region end
+    g.gain.cancelScheduledValues(t0);
     g.gain.setValueAtTime(0.0001, t0);
     g.gain.linearRampToValueAtTime(p.gain, t0 + 0.003);
     g.gain.setValueAtTime(p.gain, Math.max(t0 + 0.004, t0 + outDur - 0.008));
@@ -612,8 +718,50 @@ function triggerPad(i) {
     src.start(t0, p.region.start, durBuf + 0.005);
     src.onended = () => { if (p.currentSrc === src) { p.currentSrc = null; p.currentGain = null; } };
   }
+}
 
-  flashPad(i);
+/* Lightweight one-shot voice for the sequencer. Creates its own src+gain,
+   gates the region with declick, routes to padBus, self-cleans on ended,
+   and NEVER touches pads[i].currentSrc (so it can't fight live play/loop). */
+function playSliceOneShot(i, when) {
+  if (!buf || !ctx) return;
+  const p = pads[i];
+  if (!p.region) return;
+  const rate = Math.pow(2, p.pitch / 12);
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.playbackRate.value = rate;
+  const g = ctx.createGain();
+  src.connect(g).connect(padBus);
+  const durBuf = p.region.len;
+  const outDur = durBuf / rate;
+  const t0 = when;
+  g.gain.cancelScheduledValues(t0);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(p.gain, t0 + 0.003);
+  g.gain.setValueAtTime(p.gain, Math.max(t0 + 0.004, t0 + outDur - 0.008));
+  g.gain.linearRampToValueAtTime(0.0008, t0 + outDur);
+  src.start(t0, p.region.start, durBuf + 0.005);
+  src.onended = () => { try { src.disconnect(); g.disconnect(); } catch (e) {} };
+  // flash the pad when the sequenced hit actually lands
+  const delay = Math.max(0, (when - ctx.currentTime) * 1000);
+  setTimeout(() => flashPad(i), delay);
+}
+
+/* Live trigger from key/click. Flashes immediately; sound lands on the grid
+   when quantize is on and the transport is running. */
+function triggerPad(i) {
+  if (!buf || !ctx) return;
+  resumeCtx();
+  const p = pads[i];
+  if (!p.region) return;
+  flashPad(i); // immediate visual feedback regardless of quantize
+  const grid = quantizeGridSteps();
+  if (grid === 0 || !transportOn) {
+    triggerPadAt(i, ctx.currentTime);
+  } else {
+    triggerPadAt(i, nextGridTime(grid));
+  }
 }
 
 function flashPad(i) {
@@ -714,14 +862,96 @@ function assignSelToArmed() {
 }
 
 /* ============================================================
-   BEAT SCHEDULER
+   STEP SEQUENCER UI
    ============================================================ */
-let beatOn = false, beatStep = 0, beatNextT = 0, beatTimer = null;
+function buildSeqUI() {
+  const host = document.getElementById('seqGridEl');
+  host.innerHTML = '';
+  for (let i = 0; i < 8; i++) {
+    const row = document.createElement('div'); row.className = 'seq-row';
+    const lab = document.createElement('button');
+    lab.className = 'seq-label'; lab.id = `seq-label-${i}`;
+    lab.textContent = `${i + 1} · ${PAD_KEYS[i]}`;
+    lab.title = 'audition this pad';
+    lab.onclick = () => { initAudio(); resumeCtx(); triggerPad(i); };
+    const cells = document.createElement('div'); cells.className = 'seq-cells';
+    for (let s = 0; s < 16; s++) {
+      const cell = document.createElement('button');
+      cell.className = 'seq-cell' + (s % 4 === 0 && s !== 0 ? ' grp' : '');
+      cell.id = `seq-cell-${i}-${s}`;
+      cell.onclick = () => {
+        seqGrid[i][s] = !seqGrid[i][s];
+        paintSeqCell(i, s);
+      };
+      cells.appendChild(cell);
+    }
+    row.append(lab, cells);
+    host.appendChild(row);
+    paintSeqLabel(i);
+  }
+  for (let i = 0; i < 8; i++) for (let s = 0; s < 16; s++) paintSeqCell(i, s);
+}
+
+function paintSeqCell(i, s) {
+  const cell = document.getElementById(`seq-cell-${i}-${s}`);
+  if (!cell) return;
+  cell.style.background = seqGrid[i][s] ? padColor(i, 0.85) : 'none';
+  cell.style.borderColor = seqGrid[i][s] ? padColor(i, 0.95) : '';
+}
+
+function paintSeqLabel(i) {
+  const lab = document.getElementById(`seq-label-${i}`);
+  if (lab) lab.classList.toggle('empty', !pads[i].region);
+}
+
+function clearSeq() {
+  for (let i = 0; i < 8; i++) for (let s = 0; s < 16; s++) {
+    seqGrid[i][s] = false; paintSeqCell(i, s);
+  }
+}
+
+/* Moving column highlight follows the current step while transport runs. */
+function updateSeqHighlight() {
+  const step = (transportOn && countInRemaining === 0) ? (stepGlobal % 16) : -1;
+  if (step === seqHighlightStep) return;
+  for (let i = 0; i < 8; i++) {
+    if (seqHighlightStep >= 0) {
+      const old = document.getElementById(`seq-cell-${i}-${seqHighlightStep}`);
+      if (old) old.classList.remove('playhead');
+    }
+    if (step >= 0) {
+      const cur = document.getElementById(`seq-cell-${i}-${step}`);
+      if (cur) cur.classList.add('playhead');
+    }
+  }
+  seqHighlightStep = step;
+}
+setInterval(updateSeqHighlight, 30);
+
+/* ============================================================
+   BEAT SCHEDULER / SHARED TRANSPORT CLOCK
+   ============================================================ */
+let beatOn = false;
 let bpm = 114, swing = 0.08, beatStyle = 'deep';
 let bassOsc = null, bassOscGain = null;
 
+/* Shared transport clock — one scheduler loop drives beat + sequencer +
+   metronome off a single timeline. */
+let transportOn = false;       // is the clock interval running
+let transportTimer = null;     // setInterval handle
+let stepGlobal = 0;            // absolute step counter since transport start
+let stepNextT = 0;            // ctx time of the next (unswung) step boundary
+let curBar = 0, curBeat = 0;   // for the position display (0-based internally)
+let metroOn = false;          // metronome consumer
+let countInOn = true;         // count-in checkbox state
+let countInRemaining = 0;     // steps of count-in left before capture arms
+let pendingRecord = false;     // record requested, waiting for count-in to finish
+
 const spb = () => 60 / bpm;
-const stepDur = () => spb() / 4;
+const stepDur = () => spb() / 4;   // seconds per 16th, recomputed live from bpm
+
+/* true if any consumer needs the clock */
+function transportNeeded() { return beatOn || seqOn || metroOn || pendingRecord || recording; }
 
 function env(g, t, a, peak, d) {
   g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(0.0001, t);
@@ -774,52 +1004,136 @@ function duckKick(t) {
   g.linearRampToValueAtTime(1, t + rampDur);
 }
 
-function scheduleBeat() {
-  if (!ctx) return;
-  while (beatNextT < ctx.currentTime + 0.12) {
-    let t = beatNextT;
-    if (beatStep % 2 === 1) t += swing * stepDur();
-    const st = beatStep;
+/* Play the drum voices for one step `st` (0–15) at time `t`. */
+function playBeatStep(st, t) {
+  if (beatStyle === 'deep') {
+    // kick 4-on-floor, shaker 16ths, rim on step 8
+    if ([0, 4, 8, 12].includes(st)) kickRound(t);
+    hatNoise(t, 7000, 0.30, 0.04);
+    if (st === 8) bpNoise(t, 1700, 4, 0.4, 0.05);
+  } else if (beatStyle === 'swing') {
+    if ([0, 4, 8, 12].includes(st)) kickPunch(t);
+    if (st % 2 === 0) hatNoise(t, 6000, 0.32, 0.05);
+    else hatNoise(t, 6000, 0.18, 0.035);
+    if (st === 4 || st === 12) bpNoise(t, 2500, 3, 0.5, 0.06);
+  } else if (beatStyle === 'techno') {
+    if ([0, 4, 8, 12].includes(st)) kickPunch(t);
+    if ([2, 6, 10, 14].includes(st)) hatNoise(t, 8200, 0.5, 0.04);
+    // extra quiet 16ths
+    if (st % 2 === 1) hatNoise(t, 8200, 0.12, 0.025);
+  }
+}
 
-    if (beatStyle === 'deep') {
-      // kick 4-on-floor, shaker 16ths, rim on step 8
-      if ([0, 4, 8, 12].includes(st)) kickRound(t);
-      hatNoise(t, 7000, 0.30, 0.04);
-      if (st === 8) bpNoise(t, 1700, 4, 0.4, 0.05);
-    } else if (beatStyle === 'swing') {
-      if ([0, 4, 8, 12].includes(st)) kickPunch(t);
-      if (st % 2 === 0) hatNoise(t, 6000, 0.32, 0.05);
-      else hatNoise(t, 6000, 0.18, 0.035);
-      if (st === 4 || st === 12) bpNoise(t, 2500, 3, 0.5, 0.06);
-    } else if (beatStyle === 'techno') {
-      if ([0, 4, 8, 12].includes(st)) kickPunch(t);
-      if ([2, 6, 10, 14].includes(st)) hatNoise(t, 8200, 0.5, 0.04);
-      // extra quiet 16ths
-      if (st % 2 === 1) hatNoise(t, 8200, 0.12, 0.025);
+/* Metronome click — tiny enveloped sine. accent on step 0 of the bar. */
+function metroClick(t, accent) {
+  if (!metroBus) return;
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(accent ? 1500 : 1000, t);
+  const peak = accent ? 0.9 : 0.5;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(peak, t + 0.002);
+  g.gain.exponentialRampToValueAtTime(0.0008, t + 0.03);
+  o.connect(g).connect(metroBus);
+  o.start(t); o.stop(t + 0.05);
+}
+
+/* The single shared scheduler loop. Advances stepNextT, firing each step
+   exactly once, driving every active consumer off one timeline. */
+function scheduleTransport() {
+  if (!ctx) return;
+  while (stepNextT < ctx.currentTime + 0.12) {
+    const stepInBar = stepGlobal % 16;           // 0–15
+    let t = stepNextT;
+    if (stepInBar % 2 === 1) t += swing * stepDur();  // swing odd 16ths
+
+    if (countInRemaining > 0) {
+      // count-in bar: metronome only, on quarters; do not fire beat/seq.
+      if (stepInBar % 4 === 0) metroClick(t, stepInBar === 0);
+    } else {
+      // (a) beat voices
+      if (beatOn) playBeatStep(stepInBar, t);
+      // (b) sequencer pad triggers
+      if (seqOn) {
+        for (let i = 0; i < 8; i++) {
+          if (seqGrid[i][stepInBar] && pads[i].region) playSliceOneShot(i, t);
+        }
+      }
+      // (c) metronome click
+      if (metroOn && stepInBar % 4 === 0) metroClick(t, stepInBar === 0);
     }
 
-    beatNextT += stepDur();
-    beatStep = (beatStep + 1) % 16;
+    // (d) position display update (every quarter)
+    if (stepInBar % 4 === 0) {
+      curBeat = stepInBar / 4;                    // 0–3
+      updatePosDisplay();
+    }
+
+    // count-in bookkeeping: when the count bar completes, arm capture.
+    if (countInRemaining > 0) {
+      countInRemaining--;
+      if (countInRemaining === 0) armCaptureAfterCountIn();
+    }
+
+    stepNextT += stepDur();
+    stepGlobal++;
   }
+}
+
+/* Start the shared transport if not already running. Resets the timeline. */
+function startTransport(reset) {
+  initAudio(); resumeCtx();
+  if (!noiseBuf) noiseBuf = makeNoise(ctx, 2);
+  if (transportOn) return;
+  transportOn = true;
+  if (reset !== false) { stepGlobal = 0; curBar = 0; curBeat = 0; }
+  stepNextT = ctx.currentTime + 0.06;
+  transportTimer = setInterval(scheduleTransport, 25);
+  updatePosDisplay();
+}
+
+/* Stop the shared transport and clear pending step state. */
+function stopTransport() {
+  if (!transportOn) return;
+  transportOn = false;
+  clearInterval(transportTimer); transportTimer = null;
+  stepGlobal = 0; curBar = 0; curBeat = 0;
+  countInRemaining = 0;
+  updatePosDisplay();
+}
+
+/* Stop the transport only if no consumer still needs it. */
+function maybeStopTransport() {
+  if (!transportNeeded()) stopTransport();
+}
+
+function updatePosDisplay() {
+  const el = document.getElementById('posDisplay');
+  if (!el) return;
+  if (!transportOn) { el.textContent = '—'; return; }
+  if (countInRemaining > 0) { el.textContent = 'count-in'; return; }
+  const bar = Math.floor(stepGlobal / 16) + 1;     // bar starts at 1
+  const beat = (Math.floor(stepGlobal / 4) % 4) + 1; // beat 1–4
+  el.textContent = String(bar).padStart(3, '0') + '.' + beat;
 }
 
 function startBeat() {
   if (beatOn) return;
   initAudio(); resumeCtx();
-  beatOn = true; beatStep = 0; beatNextT = ctx.currentTime + 0.05;
-  if (!noiseBuf) noiseBuf = makeNoise(ctx, 2);
+  beatOn = true;
   startBassOsc();
-  beatTimer = setInterval(scheduleBeat, 25);
+  if (!transportOn) startTransport(true); // align timeline if this is the first consumer
   const btn = document.getElementById('beatToggle');
   btn.textContent = 'beat: on'; btn.classList.add('on');
 }
 
 function stopBeat() {
   if (!beatOn) return;
-  beatOn = false; clearInterval(beatTimer); beatTimer = null;
+  beatOn = false;
   stopBassOsc();
   const btn = document.getElementById('beatToggle');
   btn.textContent = 'beat: off'; btn.classList.remove('on');
+  maybeStopTransport();
 }
 
 function startBassOsc() {
@@ -836,6 +1150,26 @@ function stopBassOsc() {
 }
 
 document.getElementById('beatToggle').onclick = () => { if (beatOn) stopBeat(); else startBeat(); };
+
+/* sequencer controls */
+document.getElementById('seqToggle').onclick = () => {
+  seqOn = !seqOn;
+  const btn = document.getElementById('seqToggle');
+  btn.textContent = 'sequence: ' + (seqOn ? 'on' : 'off');
+  btn.classList.toggle('on', seqOn);
+  if (seqOn) { initAudio(); resumeCtx(); if (!transportOn) startTransport(true); }
+  else maybeStopTransport();
+};
+document.getElementById('seqClear').onclick = clearSeq;
+
+/* metronome + count-in */
+document.getElementById('metroCheck').onchange = (e) => {
+  metroOn = e.target.checked;
+  if (metroOn) { initAudio(); resumeCtx(); if (!transportOn) startTransport(true); }
+  else maybeStopTransport();
+};
+document.getElementById('countInCheck').onchange = (e) => { countInOn = e.target.checked; };
+document.getElementById('quantSelect').onchange = () => {};
 document.getElementById('bpmInput').onchange = (e) => { bpm = Math.max(60, Math.min(160, +e.target.value || 114)); };
 document.getElementById('swingSlider').oninput = (e) => {
   swing = +e.target.value / 100;
@@ -1029,10 +1363,13 @@ document.getElementById('playSelBtn').onclick = () => {
 };
 document.getElementById('stopAudBtn').onclick = () => stopAudition(0.03);
 document.getElementById('assignBtn').onclick = assignSelToArmed;
-document.getElementById('rec').onclick = () => {
+function toggleRecord() {
   initAudio(); resumeCtx();
-  if (recording) finalizeRecording(); else startRecording();
-};
+  if (pendingRecord) cancelCountIn();
+  else if (recording) finalizeRecording();
+  else requestRecord();
+}
+document.getElementById('rec').onclick = toggleRecord;
 
 /* ============================================================
    KEYBOARD
@@ -1049,7 +1386,7 @@ window.addEventListener('keydown', (e) => {
   }
   if (e.code === 'Space') { e.preventDefault(); if (beatOn) stopBeat(); else startBeat(); return; }
   if (e.key === 'x' || e.key === 'X') { e.preventDefault(); stopAudition(0.03); return; }
-  if (e.key === 'b' || e.key === 'B') { e.preventDefault(); initAudio(); resumeCtx(); if (recording) finalizeRecording(); else startRecording(); return; }
+  if (e.key === 'b' || e.key === 'B') { e.preventDefault(); toggleRecord(); return; }
 });
 
 /* ============================================================
@@ -1058,6 +1395,7 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('resize', () => { drawAll(); });
 
 buildPadUI();
+buildSeqUI();
 drawAll();
 </script>
 </body>
