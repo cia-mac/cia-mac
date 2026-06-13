@@ -17,6 +17,7 @@ export default async function Nav() {
           {user?.status === 'approved' && (
             <>
               <Link href="/" className="rounded-full px-3 py-1.5 hover:bg-ink/5">Menu</Link>
+              <Link href="/knowledge" className="rounded-full px-3 py-1.5 hover:bg-ink/5">Knowledge</Link>
               <Link href="/feedback" className="rounded-full px-3 py-1.5 hover:bg-ink/5">Feedback</Link>
               {user.role === 'admin' && (
                 <Link href="/admin" className="rounded-full px-3 py-1.5 font-semibold text-tomato hover:bg-tomato/10">

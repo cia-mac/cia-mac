@@ -1,4 +1,5 @@
 import { sql } from './db';
+import { embed, cosineSimilarity, embeddingsEnabled } from './embeddings';
 
 export type Drop = {
   id: number;
@@ -184,4 +185,98 @@ export async function listMembers(): Promise<MemberRow[]> {
       created_at DESC
   `;
   return rows as MemberRow[];
+}
+
+// ---- Knowledge Case --------------------------------------------------------
+
+export type KnowledgeKind = 'video' | 'goal' | 'link';
+
+export type KnowledgeItem = {
+  id: number;
+  user_id: number;
+  url: string;
+  kind: KnowledgeKind;
+  title: string;
+  description: string;
+  note: string;
+  created_at: string;
+};
+
+/** Search result: a knowledge item plus how well it matched (0–1). */
+export type KnowledgeHit = KnowledgeItem & { score: number };
+
+/** All of a user's saved links, newest first. */
+export async function listKnowledge(userId: number): Promise<KnowledgeItem[]> {
+  const { rows } = await sql`
+    SELECT id, user_id, url, kind, title, description, note, created_at
+    FROM knowledge_items
+    WHERE user_id = ${userId}
+    ORDER BY created_at DESC
+  `;
+  return rows as KnowledgeItem[];
+}
+
+export async function knowledgeCount(userId: number): Promise<number> {
+  const { rows } = await sql`
+    SELECT COUNT(*)::int AS n FROM knowledge_items WHERE user_id = ${userId}
+  `;
+  return rows[0].n as number;
+}
+
+/**
+ * Natural-language search over a user's saved links.
+ *
+ * When embeddings are configured we embed the query and rank every item by
+ * cosine similarity to its stored vector — so "clips about staying motivated"
+ * finds a goal-setting video even if those words never appear in it.
+ *
+ * When embeddings are off (or an item has no vector yet) we fall back to a
+ * plain keyword match over the title, description, note and URL, so search is
+ * always useful.
+ */
+export async function searchKnowledge(userId: number, query: string): Promise<KnowledgeHit[]> {
+  const q = query.trim();
+  if (!q) return [];
+
+  // Pull the rows we need. Include the embedding only for semantic ranking.
+  const { rows } = await sql`
+    SELECT id, user_id, url, kind, title, description, note, created_at, embedding
+    FROM knowledge_items
+    WHERE user_id = ${userId}
+  `;
+
+  const queryVector = embeddingsEnabled() ? await embed(q) : null;
+
+  if (queryVector) {
+    const scored = rows
+      .map((r: any) => {
+        const vec = Array.isArray(r.embedding) ? (r.embedding as number[]) : null;
+        const score = vec ? cosineSimilarity(queryVector, vec) : keywordScore(q, r);
+        const { embedding, ...item } = r;
+        return { ...(item as KnowledgeItem), score };
+      })
+      .filter((h) => h.score > 0.15)
+      .sort((a, b) => b.score - a.score);
+    return scored.slice(0, 50);
+  }
+
+  // Keyword fallback.
+  return rows
+    .map((r: any) => {
+      const { embedding, ...item } = r;
+      return { ...(item as KnowledgeItem), score: keywordScore(q, r) };
+    })
+    .filter((h) => h.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 50);
+}
+
+/** Cheap relevance score for keyword fallback: counts term hits across fields. */
+function keywordScore(query: string, row: any): number {
+  const haystack = `${row.title} ${row.description} ${row.note} ${row.url}`.toLowerCase();
+  const terms = query.toLowerCase().split(/\s+/).filter((t) => t.length > 1);
+  if (terms.length === 0) return haystack.includes(query.toLowerCase()) ? 1 : 0;
+  let hits = 0;
+  for (const t of terms) if (haystack.includes(t)) hits++;
+  return hits / terms.length;
 }
