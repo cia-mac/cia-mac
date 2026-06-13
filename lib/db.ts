@@ -140,6 +140,26 @@ async function initSchema() {
       created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `;
+
+  // Knowledge Case: links (videos, goals, articles) the user throws in. We keep
+  // the fetched title/description/body text plus an embedding so they can be
+  // searched by meaning, not just by keyword. The embedding is stored as a JSON
+  // array of floats (JSONB) so no pgvector extension is required; similarity is
+  // computed in the app. Null embedding = saved before embeddings were enabled.
+  await rawSql`
+    CREATE TABLE IF NOT EXISTS knowledge_items (
+      id          SERIAL PRIMARY KEY,
+      user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      url         TEXT NOT NULL,
+      kind        TEXT NOT NULL DEFAULT 'link',   -- 'video' | 'goal' | 'link'
+      title       TEXT NOT NULL DEFAULT '',
+      description TEXT NOT NULL DEFAULT '',
+      content     TEXT NOT NULL DEFAULT '',        -- extracted body excerpt
+      note        TEXT NOT NULL DEFAULT '',        -- user's own note
+      embedding   JSONB,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `;
 }
 
 /** True once the first admin (kitchen owner) account exists. */
