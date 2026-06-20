@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The change you can't catch — change blindness · Photon to Phenomenology</title>
+<style>
+  :root { --bg:#0c0b09; --ink:#e8e0d0; --dim:#8a8378; --faint:#5f5a50; --hair:#221f1a; --gold:#c9a24b; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; }
+  body { background:var(--bg); color:var(--ink); font:16px/1.6 -apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+  .wrap { min-height:100%; display:flex; flex-direction:column; }
+  .crumb { padding:18px 22px 0; font:12px/1 ui-monospace,"SF Mono",Menlo,monospace; color:var(--faint); }
+  .crumb a { color:var(--faint); text-decoration:none; }
+  .crumb a:hover { color:var(--ink); }
+
+  .stage { position:relative; flex:1; min-height:58vh; overflow:hidden; cursor:pointer; }
+  canvas { display:block; width:100%; height:100%; }
+  .overlay { position:absolute; left:0; right:0; bottom:0; padding:18px 22px 14px;
+    background:linear-gradient(to top, rgba(12,11,9,0.92), rgba(12,11,9,0)); pointer-events:none; }
+  .headline { font-size:21px; font-weight:600; letter-spacing:-0.01em; }
+  .headline .full { color:var(--dim); font-weight:400; font-size:14px; }
+  .read { margin-top:6px; font-size:14px; color:var(--dim); max-width:62ch; min-height:42px; }
+  .read em { color:var(--ink); font-style:normal; }
+  .read b { color:var(--gold); font-weight:600; }
+  .phase { position:absolute; right:16px; top:14px; font:13px/1 ui-monospace,Menlo,monospace; color:var(--faint); }
+
+  .panel { padding:20px 22px; border-top:1px solid var(--hair); }
+  .panel .lede { font-size:15px; color:var(--dim); max-width:64ch; }
+  .panel .lede em { color:var(--ink); font-style:normal; }
+  .controls { margin-top:16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  button { background:none; border:1px solid var(--hair); color:var(--dim); font:13px -apple-system,Helvetica,sans-serif; padding:8px 16px; cursor:pointer; border-radius:2px; }
+  button:hover { color:var(--ink); border-color:var(--dim); }
+  button.primary { color:var(--ink); border-color:var(--gold); }
+  .row { display:flex; align-items:center; gap:14px; margin-top:18px; }
+  .row label { font:12px/1 ui-monospace,Menlo,monospace; color:var(--dim); width:96px; }
+  input[type=range]{ -webkit-appearance:none; appearance:none; flex:1; max-width:240px; height:2px; background:var(--hair); outline:none; }
+  input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:15px; height:15px; border-radius:50%; background:var(--ink); cursor:pointer; }
+  input[type=range]::-moz-range-thumb{ width:15px; height:15px; border-radius:50%; background:var(--ink); border:none; cursor:pointer; }
+  .note { padding:18px 22px 40px; font-size:14px; color:var(--dim); max-width:66ch; }
+  .note em { color:var(--ink); font-style:normal; }
+  .cite { margin-top:14px; font-size:12px; color:var(--faint); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="/photon/book/">Vision Science — reading companion</a> &nbsp;/&nbsp; ch.11 · §11</div>
+
+  <div class="stage" id="stage">
+    <canvas id="c"></canvas>
+    <span class="phase" id="phase"></span>
+    <div class="overlay">
+      <div class="headline">The change you can't catch <span class="full">· change blindness</span></div>
+      <div class="read" id="read"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <p class="lede">One thing in this scene keeps changing — appearing, vanishing, or shifting colour — over and over. With the brief blank flicker between each version, you will struggle to spot it for a shockingly long time. <em>Tap when you think you've found it</em> (it'll be marked). Then turn the flicker off and watch how it screams at you.</p>
+    <div class="controls">
+      <button id="restart" class="primary">New change</button>
+      <button id="reveal">Reveal it</button>
+    </div>
+    <div class="row">
+      <label>blank flicker</label>
+      <input type="range" id="blank" min="0" max="180" value="90">
+    </div>
+  </div>
+
+  <p class="note">With the image present continuously, a change produces a motion transient — a flash of "something moved here" — and your eye is yanked straight to it. The brief blank wipes that transient out: when the scene returns, every object has changed in the sense that it just blinked off and on, so there is no local signal pointing at the one that's truly different. To find it you must <em>compare a remembered image to the present one</em>, object by object — and it turns out you remember far less of a scene than it feels like you do. The vivid, detailed world in your head is largely an illusion of availability: detail is rendered where you attend, and almost nowhere else. <em>You do not hold a picture of the world — you re-fetch it, on demand, and trust it's all there.</em></p>
+  <p class="cite">Photon to Phenomenology · companion to Palmer, <i>Vision Science: Photons to Phenomenology</i>, §11 (change blindness, the flicker paradigm; Rensink, O'Regan & Clark 1997) · @ciamac</p>
+
+<script>
+(function(){
+  const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+  const stage=document.getElementById('stage');
+  const read=document.getElementById('read'), phase=document.getElementById('phase');
+  const blankEl=document.getElementById('blank');
+  let DPR=Math.min(window.devicePixelRatio||1,2), W=0, H=0;
+
+  function resize(){
+    const r=stage.getBoundingClientRect();
+    W=r.width; H=r.height; cv.width=W*DPR; cv.height=H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0);
+    layout();
+  }
+  window.addEventListener('resize',resize);
+
+  // a scene of muted rectangles/discs; one item is the "change" (toggles between two states)
+  let items=[], changeIdx=0, t0=performance.now(), found=false, revealed=false;
+  const PALETTE=['#b06a55','#6a8fb0','#b0a25a','#6fae84','#9a78c0','#c08aa0','#8a8378'];
+
+  function rnd(a,b){ return a+Math.random()*(b-a); }
+  function layout(){
+    const N=18, m=W*0.08;
+    items=[];
+    for(let i=0;i<N;i++){
+      items.push({
+        x:rnd(m, W-m), y:rnd(H*0.10, H*0.80),
+        w:rnd(W*0.05, W*0.11), h:rnd(H*0.05, H*0.12),
+        col:PALETTE[(Math.random()*PALETTE.length)|0],
+        round:Math.random()<0.4
+      });
+    }
+    changeIdx=(Math.random()*N)|0;
+    // the change: alternate colour + presence
+    const it=items[changeIdx];
+    it.altCol=PALETTE[(Math.random()*PALETTE.length)|0];
+    while(it.altCol===it.col) it.altCol=PALETTE[(Math.random()*PALETTE.length)|0];
+    it.toggleHide=Math.random()<0.5;
+    found=false; revealed=false; t0=performance.now();
+  }
+
+  function drawItem(it, alt){
+    ctx.save();
+    let col=it.col, hidden=false;
+    if(it===items[changeIdx] && alt){ col=it.altCol; if(it.toggleHide) hidden=true; }
+    if(hidden){ ctx.restore(); return; }
+    ctx.fillStyle=col;
+    if(it.round){ ctx.beginPath(); ctx.ellipse(it.x,it.y,it.w/2,it.h/2,0,0,7); ctx.fill(); }
+    else { ctx.fillRect(it.x-it.w/2, it.y-it.h/2, it.w, it.h); }
+    if((it===items[changeIdx]) && (found||revealed)){
+      ctx.strokeStyle=ctx.fillStyle='rgba(201,162,75,0.95)'; ctx.lineWidth=2.5; ctx.fillStyle='transparent';
+      ctx.strokeStyle='rgba(201,162,75,0.95)';
+      ctx.strokeRect(it.x-it.w/2-7, it.y-it.h/2-7, it.w+14, it.h+14);
+    }
+    ctx.restore();
+  }
+
+  function draw(ts){
+    const blankMs=+blankEl.value;
+    const cycle=600+blankMs;          // A shown, blank, B shown, blank …
+    const tphase = (ts - t0) % (cycle*2);
+    let state; // 'A','B','blank'
+    if(blankMs===0){ state = (tphase < cycle) ? 'A' : 'B'; }
+    else {
+      if(tphase < 600) state='A';
+      else if(tphase < 600+blankMs) state='blank';
+      else if(tphase < 600+blankMs+600) state='B';
+      else state='blank';
+    }
+    ctx.fillStyle='#0c0b09'; ctx.fillRect(0,0,W,H);
+    if(state!=='blank'){
+      const alt = (state==='B');
+      for(const it of items) drawItem(it, alt);
+    }
+
+    const elapsed=(ts-t0)/1000;
+    if(found||revealed){
+      phase.textContent = revealed ? 'revealed' : 'found · '+elapsed.toFixed(1)+'s';
+      read.innerHTML = revealed
+        ? 'There it is, ringed. Now set <b>blank flicker</b> to 0 — with no blank, the change becomes a motion flash you cannot miss.'
+        : 'Caught it. Notice how invisible it was <em>with</em> the flicker, and how obvious without it.';
+    } else {
+      phase.textContent = elapsed.toFixed(0)+'s';
+      read.innerHTML = elapsed<6
+        ? 'Something here is changing every cycle. Hunt for it — tap when you spot it.'
+        : 'Still hidden? That’s the effect. The blank erases the “something moved” cue you normally rely on.';
+    }
+    requestAnimationFrame(draw);
+  }
+
+  // tap to mark found (we just reveal the ring; honest self-report)
+  stage.addEventListener('pointerdown', ()=>{ if(!revealed) found=true; });
+  document.getElementById('restart').onclick=()=>layout();
+  document.getElementById('reveal').onclick=()=>{ revealed=true; };
+
+  resize(); requestAnimationFrame(draw);
+})();
+</script>
+</div>
+</body>
+</html>
