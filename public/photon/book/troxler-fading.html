@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The world dissolves — Troxler fading · Photon to Phenomenology</title>
+<style>
+  :root { --bg:#0c0b09; --ink:#e8e0d0; --dim:#8a8378; --faint:#5f5a50; --hair:#221f1a; --gold:#c9a24b; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; }
+  body { background:var(--bg); color:var(--ink); font:16px/1.6 -apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+  .wrap { min-height:100%; display:flex; flex-direction:column; }
+  .crumb { padding:18px 22px 0; font:12px/1 ui-monospace,"SF Mono",Menlo,monospace; color:var(--faint); }
+  .crumb a { color:var(--faint); text-decoration:none; }
+  .crumb a:hover { color:var(--ink); }
+
+  .stage { position:relative; flex:1; min-height:60vh; overflow:hidden; cursor:crosshair; }
+  canvas { display:block; width:100%; height:100%; }
+  .overlay { position:absolute; left:0; right:0; bottom:0; padding:18px 22px 14px;
+    background:linear-gradient(to top, rgba(12,11,9,0.92), rgba(12,11,9,0)); pointer-events:none; }
+  .headline { font-size:21px; font-weight:600; letter-spacing:-0.01em; }
+  .headline .full { color:var(--dim); font-weight:400; font-size:14px; }
+  .read { margin-top:6px; font-size:14px; color:var(--dim); max-width:62ch; min-height:42px; }
+  .read em { color:var(--ink); font-style:normal; }
+  .read b { color:var(--gold); font-weight:600; }
+  .phase { position:absolute; right:16px; top:14px; font:13px/1 ui-monospace,Menlo,monospace; color:var(--faint); }
+
+  .panel { padding:20px 22px; border-top:1px solid var(--hair); }
+  .panel .lede { font-size:15px; color:var(--dim); max-width:64ch; }
+  .panel .lede em { color:var(--ink); font-style:normal; }
+  .controls { margin-top:16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  button { background:none; border:1px solid var(--hair); color:var(--dim); font:13px -apple-system,Helvetica,sans-serif; padding:8px 16px; cursor:pointer; border-radius:2px; }
+  button:hover { color:var(--ink); border-color:var(--dim); }
+  button.primary { color:var(--ink); border-color:var(--gold); }
+  .row { display:flex; align-items:center; gap:14px; margin-top:18px; }
+  .row label { font:12px/1 ui-monospace,Menlo,monospace; color:var(--dim); width:84px; }
+  input[type=range]{ -webkit-appearance:none; appearance:none; flex:1; max-width:240px; height:2px; background:var(--hair); outline:none; }
+  input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:15px; height:15px; border-radius:50%; background:var(--ink); cursor:pointer; }
+  input[type=range]::-moz-range-thumb{ width:15px; height:15px; border-radius:50%; background:var(--ink); border:none; cursor:pointer; }
+  .note { padding:18px 22px 40px; font-size:14px; color:var(--dim); max-width:66ch; }
+  .note em { color:var(--ink); font-style:normal; }
+  .cite { margin-top:14px; font-size:12px; color:var(--faint); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="/photon/book/">Vision Science — reading companion</a> &nbsp;/&nbsp; ch.11 · §11</div>
+
+  <div class="stage" id="stage">
+    <canvas id="c"></canvas>
+    <span class="phase" id="phase"></span>
+    <div class="overlay">
+      <div class="headline">The world dissolves <span class="full">· Troxler fading</span></div>
+      <div class="read" id="read"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <p class="lede">Stare at the centre cross and <em>hold absolutely still</em>. Within ten or twenty seconds the soft coloured clouds in your periphery will fade and vanish — leaving a blank field. Flick your eyes, and they snap back. (Move your mouse or tap to reset.)</p>
+    <div class="controls">
+      <button id="start" class="primary">Start fixating</button>
+    </div>
+    <div class="row">
+      <label>blur</label>
+      <input type="range" id="blur" min="10" max="60" value="34">
+    </div>
+    <div class="row">
+      <label>distance</label>
+      <input type="range" id="ecc" min="50" max="100" value="74">
+    </div>
+  </div>
+
+  <p class="note">Nothing on the screen actually disappears — the clouds are still there the whole time. What fades is your <em>response</em> to them. Neurons adapt to anything unchanging; a stimulus that never moves on the retina stops being news, and the visual system simply stops reporting it. Normally your eyes drift and jitter constantly (microsaccades), refreshing the image and keeping the world visible — but a soft, low-contrast, peripheral target held on a steady gaze defeats that, and it drops out of consciousness entirely. The blank you see is not on the screen; it is your visual system deciding the unchanging is not worth representing. <em>Even the persistence of the world is something the brain has to keep choosing to construct.</em></p>
+  <p class="cite">Photon to Phenomenology · companion to Palmer, <i>Vision Science: Photons to Phenomenology</i>, §11 (adaptation, microsaccades; Troxler 1804) · @ciamac</p>
+</div>
+
+<script>
+(function(){
+  const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+  const stage=document.getElementById('stage');
+  const read=document.getElementById('read'), phase=document.getElementById('phase');
+  const startBtn=document.getElementById('start');
+  const blurEl=document.getElementById('blur'), eccEl=document.getElementById('ecc');
+  let DPR=Math.min(window.devicePixelRatio||1,2), W=0, H=0;
+
+  function resize(){
+    const r=stage.getBoundingClientRect();
+    W=r.width; H=r.height;
+    cv.width=W*DPR; cv.height=H*DPR;
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  window.addEventListener('resize',resize);
+
+  // peripheral blobs, placed on a ring around centre; soft pastel hues in register-adjacent muted tones
+  const HUES=[18, 150, 280, 210, 45, 330];
+  let blobs=[];
+  function layout(){
+    const cx=W/2, cy=H*0.46;
+    const ringFrac=+eccEl.value/100;
+    const R=Math.min(W,H)*0.42*ringFrac + Math.min(W,H)*0.12;
+    blobs=HUES.map((h,i)=>{
+      const a=(i/HUES.length)*Math.PI*2 - Math.PI/2;
+      return { x:cx+R*Math.cos(a), y:cy+R*Math.sin(a), hue:h };
+    });
+  }
+
+  let fixating=false, t0=0, fade=0;   // fade 0..1 (approximation of the felt effect)
+
+  function draw(ts){
+    if(!t0) t0=ts;
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='#0c0b09'; ctx.fillRect(0,0,W,H);
+    const cx=W/2, cy=H*0.46;
+    const blur=+blurEl.value;
+
+    // approximate the perceptual fade: after a hold, gently lower peripheral contrast.
+    // (the real, stronger effect happens in the viewer's own eye)
+    let target=0;
+    if(fixating){
+      const held=(ts-t0)/1000;
+      target = Math.max(0, Math.min(1, (held-3)/10));   // begins ~3s, complete ~13s
+      const remaining = Math.max(0, Math.ceil(13-held));
+      phase.textContent = remaining>0 ? 'hold · '+remaining+'s' : 'gone — flick your eyes';
+      read.innerHTML = target<0.15
+        ? 'Lock onto the cross. Let the edges of your vision relax — don’t hunt around.'
+        : target<0.85
+          ? 'Feel them <b>fading</b>? Keep perfectly still — any eye movement brings them straight back.'
+          : 'The clouds are <em>gone</em> from your awareness — yet every pixel is still on the screen. Tap to bring them back.';
+    } else {
+      phase.textContent='';
+      read.innerHTML='Press start, fixate the cross, and hold your gaze. Soft and peripheral is the point — don’t look straight at them.';
+    }
+    fade += (target-fade)*0.04;   // eased
+
+    for(const b of blobs){
+      const r=blur*2.4;
+      const g=ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,r);
+      const alpha=0.5*(1-fade);
+      g.addColorStop(0,`hsla(${b.hue},45%,62%,${alpha})`);
+      g.addColorStop(1,`hsla(${b.hue},45%,62%,0)`);
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(b.x,b.y,r,0,7); ctx.fill();
+    }
+
+    // fixation cross — always crisp
+    ctx.strokeStyle='rgba(232,224,208,0.9)'; ctx.lineWidth=2;
+    const cl=9;
+    ctx.beginPath();
+    ctx.moveTo(cx-cl,cy); ctx.lineTo(cx+cl,cy);
+    ctx.moveTo(cx,cy-cl); ctx.lineTo(cx,cy+cl);
+    ctx.stroke();
+
+    requestAnimationFrame(draw);
+  }
+
+  function reset(){ if(fixating){ t0=0; fade=0; } }
+  startBtn.onclick=()=>{ fixating=true; t0=0; fade=0; startBtn.textContent='Restart'; };
+  stage.addEventListener('pointermove', reset);
+  stage.addEventListener('pointerdown', reset);
+  blurEl.addEventListener('input', ()=>{});
+  eccEl.addEventListener('input', layout);
+
+  resize(); layout(); requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>
