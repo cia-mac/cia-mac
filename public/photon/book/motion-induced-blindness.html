@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The dots that vanish — motion-induced blindness · Photon to Phenomenology</title>
+<style>
+  :root { --bg:#0c0b09; --ink:#e8e0d0; --dim:#8a8378; --faint:#5f5a50; --hair:#221f1a; --gold:#c9a24b; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; }
+  body { background:var(--bg); color:var(--ink); font:16px/1.6 -apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+  .wrap { min-height:100%; display:flex; flex-direction:column; }
+  .crumb { padding:18px 22px 0; font:12px/1 ui-monospace,"SF Mono",Menlo,monospace; color:var(--faint); }
+  .crumb a { color:var(--faint); text-decoration:none; }
+  .crumb a:hover { color:var(--ink); }
+
+  .stage { position:relative; flex:1; min-height:60vh; overflow:hidden; cursor:crosshair; }
+  canvas { display:block; width:100%; height:100%; }
+  .overlay { position:absolute; left:0; right:0; bottom:0; padding:18px 22px 14px;
+    background:linear-gradient(to top, rgba(12,11,9,0.92), rgba(12,11,9,0)); pointer-events:none; }
+  .headline { font-size:21px; font-weight:600; letter-spacing:-0.01em; }
+  .headline .full { color:var(--dim); font-weight:400; font-size:14px; }
+  .read { margin-top:6px; font-size:14px; color:var(--dim); max-width:62ch; min-height:42px; }
+  .read em { color:var(--ink); font-style:normal; }
+  .read b { color:var(--gold); font-weight:600; }
+  .phase { position:absolute; right:16px; top:14px; font:13px/1 ui-monospace,Menlo,monospace; color:var(--faint); }
+
+  .panel { padding:20px 22px; border-top:1px solid var(--hair); }
+  .panel .lede { font-size:15px; color:var(--dim); max-width:64ch; }
+  .panel .lede em { color:var(--ink); font-style:normal; }
+  .controls { margin-top:16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  button { background:none; border:1px solid var(--hair); color:var(--dim); font:13px -apple-system,Helvetica,sans-serif; padding:8px 16px; cursor:pointer; border-radius:2px; }
+  button:hover { color:var(--ink); border-color:var(--dim); }
+  button.primary { color:var(--ink); border-color:var(--gold); }
+  .row { display:flex; align-items:center; gap:14px; margin-top:18px; }
+  .row label { font:12px/1 ui-monospace,Menlo,monospace; color:var(--dim); width:96px; }
+  input[type=range]{ -webkit-appearance:none; appearance:none; flex:1; max-width:240px; height:2px; background:var(--hair); outline:none; }
+  input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:15px; height:15px; border-radius:50%; background:var(--ink); cursor:pointer; }
+  input[type=range]::-moz-range-thumb{ width:15px; height:15px; border-radius:50%; background:var(--ink); border:none; cursor:pointer; }
+  .note { padding:18px 22px 40px; font-size:14px; color:var(--dim); max-width:66ch; }
+  .note em { color:var(--ink); font-style:normal; }
+  .cite { margin-top:14px; font-size:12px; color:var(--faint); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="/photon/book/">Vision Science — reading companion</a> &nbsp;/&nbsp; ch.11 · §11</div>
+
+  <div class="stage" id="stage">
+    <canvas id="c"></canvas>
+    <span class="phase" id="phase"></span>
+    <div class="overlay">
+      <div class="headline">The dots that vanish <span class="full">· motion-induced blindness</span></div>
+      <div class="read" id="read"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <p class="lede">Three bright yellow dots, impossible to miss. Stare at the red centre while the blue grid rotates, and — one at a time — the yellow dots will <em>blink out of existence</em>, sometimes for seconds, though they never actually leave. (Move the mouse or tap to reset.)</p>
+    <div class="controls">
+      <button id="start" class="primary">Start fixating</button>
+    </div>
+    <div class="row">
+      <label>rotation</label>
+      <input type="range" id="speed" min="10" max="100" value="50">
+    </div>
+    <div class="row">
+      <label>grid density</label>
+      <input type="range" id="dens" min="6" max="16" value="11">
+    </div>
+  </div>
+
+  <p class="note">The yellow dots are drawn every single frame — measure the pixels and they are always there. Yet a moving global pattern can erase a vivid, high-contrast target from awareness, completely and repeatedly. Why a healthy visual system does this is still debated: the constantly moving surface may be read as a continuous surface that "ought" to occlude the dots, so the brain suppresses them; or the steady, unchanging dots simply lose the competition for representation against the salient motion. Either way the lesson is the same and it is stark — <em>salience does not guarantee awareness.</em> Something can be bright, present, and fixated, and your visual system can still decide not to show it to you. <em>What you see is curated, not transcribed.</em></p>
+  <p class="cite">Photon to Phenomenology · companion to Palmer, <i>Vision Science: Photons to Phenomenology</i>, §11 (visual selection & awareness; Bonneh, Cooperman & Sagi 2001) · @ciamac</p>
+
+<script>
+(function(){
+  const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+  const stage=document.getElementById('stage');
+  const read=document.getElementById('read'), phase=document.getElementById('phase');
+  const startBtn=document.getElementById('start');
+  const speedEl=document.getElementById('speed'), densEl=document.getElementById('dens');
+  let DPR=Math.min(window.devicePixelRatio||1,2), W=0, H=0;
+
+  function resize(){
+    const r=stage.getBoundingClientRect();
+    W=r.width; H=r.height;
+    cv.width=W*DPR; cv.height=H*DPR;
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  window.addEventListener('resize',resize);
+
+  let fixating=false, t0=0, angle=0;
+  // three yellow targets around centre + their independent suppression state
+  const targets=[ {a:-Math.PI/2}, {a:Math.PI/6}, {a:Math.PI*5/6} ].map(t=>({ ...t, vis:1, nextFlip:2+Math.random()*3 }));
+
+  function draw(ts){
+    if(!t0) t0=ts;
+    const dt=1/60;
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='#0c0b09'; ctx.fillRect(0,0,W,H);
+    const cx=W/2, cy=H*0.46;
+    const held=fixating ? (ts-t0)/1000 : 0;
+
+    // rotating blue grid mask
+    angle += (+speedEl.value/100) * 0.012;
+    const n=+densEl.value, span=Math.min(W,H)*0.46, gap=(span*2)/n;
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(angle);
+    ctx.strokeStyle='rgba(90,120,200,0.55)'; ctx.lineWidth=2;
+    for(let i=0;i<=n;i++){
+      for(let j=0;j<=n;j++){
+        const x=-span+i*gap, y=-span+j*gap;
+        if(Math.hypot(x,y)>span) continue;
+        ctx.beginPath(); ctx.moveTo(x-5,y); ctx.lineTo(x+5,y); ctx.moveTo(x,y-5); ctx.lineTo(x,y+5); ctx.stroke();
+      }
+    }
+    ctx.restore();
+
+    // yellow targets — always present; we approximate the felt suppression after fixation begins
+    const R=Math.min(W,H)*0.28;
+    targets.forEach((t,i)=>{
+      let targetVis=1;
+      if(held>3){
+        t.nextFlip-=dt;
+        if(t.nextFlip<=0){ t.suppressed=!t.suppressed; t.nextFlip = t.suppressed ? 1+Math.random()*2.5 : 2+Math.random()*3; }
+        targetVis = t.suppressed ? 0 : 1;
+      } else { t.suppressed=false; }
+      t.vis += (targetVis-t.vis)*0.12;   // eased blink
+      const x=cx+R*Math.cos(t.a), y=cy+R*Math.sin(t.a);
+      const g=ctx.createRadialGradient(x,y,0,x,y,16);
+      g.addColorStop(0,`rgba(245,210,70,${0.95*t.vis})`);
+      g.addColorStop(1,`rgba(245,210,70,0)`);
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,16,0,7); ctx.fill();
+    });
+
+    // central fixation dot — crisp
+    ctx.fillStyle='rgba(225,90,70,0.95)'; ctx.beginPath(); ctx.arc(cx,cy,5,0,7); ctx.fill();
+
+    if(fixating){
+      const gone=targets.filter(t=>t.vis<0.4).length;
+      phase.textContent = held<3 ? 'hold steady…' : gone>0 ? gone+' gone' : 'all present';
+      read.innerHTML = held<3
+        ? 'Lock onto the red dot. Don’t look at the yellow ones directly — let them sit in the corner of your eye.'
+        : 'Notice a yellow dot <b>blink out</b>? Keep fixating — they vanish and return on their own, one at a time, though all three are always drawn.';
+    } else {
+      phase.textContent='';
+      read.innerHTML='Press start and fixate the red centre dot while the grid turns. Give it 10–20 seconds.';
+    }
+    requestAnimationFrame(draw);
+  }
+
+  function reset(){ if(fixating){ t0=0; targets.forEach(t=>{t.suppressed=false; t.vis=1; t.nextFlip=2+Math.random()*3;}); } }
+  startBtn.onclick=()=>{ fixating=true; t0=0; startBtn.textContent='Restart'; reset(); };
+  stage.addEventListener('pointermove', reset);
+  stage.addEventListener('pointerdown', reset);
+
+  resize(); requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>
