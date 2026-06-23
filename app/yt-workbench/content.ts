@@ -1,0 +1,267 @@
+// Auto-generated workbench markup, served only via the auth-gated route handler
+// in this folder. Editing the source of truth lives in the @ciamac YouTube
+// tracker (Notion); this file is a convenience editor.
+/* eslint-disable */
+export const WORKBENCH_HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>@ciamac · YouTube Copy Workbench</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
+    --txt:#e7e9ee; --muted:#9aa3b2; --accent:#5b9dff; --accent2:#3ad29f;
+    --warn:#ffb454; --danger:#ff6b6b; --chip:#262b35;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       background:var(--bg);color:var(--txt);-webkit-text-size-adjust:100%}
+  header{position:sticky;top:0;z-index:10;background:rgba(15,17,21,.92);backdrop-filter:blur(8px);
+         border-bottom:1px solid var(--line);padding:14px 18px}
+  h1{margin:0;font-size:17px;font-weight:650;letter-spacing:.2px}
+  .sub{color:var(--muted);font-size:12.5px;margin-top:3px}
+  .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:11px}
+  input.search{flex:1;min-width:160px;background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+        padding:9px 12px;border-radius:9px;font-size:14px}
+  button{background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:9px 13px;
+        border-radius:9px;font-size:13px;cursor:pointer;font-weight:550;white-space:nowrap}
+  button:hover{border-color:#3c4252}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#06101f}
+  button.good{background:var(--accent2);border-color:var(--accent2);color:#06241a}
+  .wrap{max-width:880px;margin:0 auto;padding:18px}
+  .count{color:var(--muted);font-size:12.5px;margin:2px 6px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 16px 18px;margin:14px 0}
+  .card.edited{border-color:var(--accent2)}
+  .chead{display:flex;align-items:flex-start;gap:10px;justify-content:space-between}
+  .ctitle{font-size:16px;font-weight:650;margin:0}
+  .badges{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}
+  .chip{background:var(--chip);color:var(--muted);font-size:11.5px;padding:3px 9px;border-radius:20px;border:1px solid var(--line)}
+  .chip.s{color:var(--accent2)} .chip.w{color:var(--warn)} .chip.pub{color:#79c0ff}
+  a.vid{color:var(--accent);text-decoration:none;font-size:12.5px}
+  a.vid:hover{text-decoration:underline}
+  .field{margin-top:13px}
+  .flabel{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--muted);
+        text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;font-weight:600}
+  .flabel .cc{text-transform:none;letter-spacing:0;font-weight:500}
+  .cc.over{color:var(--danger);font-weight:700}
+  textarea,select,input.ti{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+        border-radius:9px;padding:10px 11px;font:14px/1.5 inherit;resize:vertical}
+  textarea:focus,select:focus,input.ti:focus{outline:none;border-color:var(--accent)}
+  textarea.cp{min-height:120px}
+  textarea.desc{min-height:120px}
+  textarea.tags{min-height:54px}
+  .cprow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+  .cprow label{font-size:12px;color:var(--muted)}
+  .cprow select{width:auto;min-width:130px}
+  .edited-dot{color:var(--accent2);font-size:12px;margin-left:6px}
+  .restore{background:transparent;border:none;color:var(--muted);font-size:12px;padding:4px 6px}
+  .restore:hover{color:var(--danger)}
+  .note{background:#2a2113;border:1px solid #5a4416;color:#ffd596;font-size:12.5px;padding:8px 11px;border-radius:8px;margin-top:10px}
+  .hr288{font-size:11.5px;color:var(--muted);margin-top:4px}
+  footer{color:var(--muted);font-size:12px;text-align:center;padding:24px}
+  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--accent2);color:#06241a;
+        padding:11px 18px;border-radius:10px;font-weight:650;opacity:0;transition:opacity .25s;pointer-events:none;z-index:50}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <h1>@ciamac · YouTube Copy Workbench</h1>
+  <div class="sub">16 live videos · edit Title, Description, Tags &amp; Community Post · autosaves in this browser</div>
+  <div class="bar">
+    <input class="search" id="search" placeholder="Filter by title, playlist, tag…">
+    <button id="exportBtn" class="primary">⬇ Download edits</button>
+    <button id="copyBtn" class="good">⧉ Copy edits</button>
+    <button id="resetAll" class="restore" style="border:1px solid var(--line)">Reset all</button>
+  </div>
+  <div class="count" id="status"></div>
+</header>
+<div class="wrap" id="list"></div>
+<footer>
+  Copy rule: pipe titles · terse first-person · no camera-brand promo (except when the gear is the credit, e.g. DTS=IDT) · close with “More work: https://ciamac.com”.<br>
+  Community posts: front-load the hook — only ~288 characters show before “…read more”. No public API, so posting is manual in YouTube Studio.<br>
+  Edits live only in this browser until you Download/Copy them and hand them back to sync into Notion.
+</footer>
+<div class="toast" id="toast"></div>
+
+<script id="data" type="application/json">
+[
+ {"id":"378f87ed-3fbb-81f1-8118-e647ef86c18e","title":"EQAL | Switzerland Reel | 2007","videoId":"-64avVxO5lU","playlist":"REEL","series":"","copyright":"Partially blocked","description":"A reel for EQAL, Christian Breitschmidt's company in Switzerland, from my years working there.\n\nEdited by Ciamac Parhizi.\nMore work: https://ciamac.com","tags":"EQAL, Christian Breitschmidt, Switzerland, showreel, editing, reel, Ciamac Parhizi, filmmaker","communityPost":"Before LA, I spent years in Switzerland cutting for Christian Breitschmidt's company, EQAL. This is that reel — 2007. The edit is mine.\n\n▶ https://www.youtube.com/watch?v=-64avVxO5lU\nMore work: https://ciamac.com","cpStatus":"Draft","note":"Video is Partially blocked (Massive Attack audio) — fix in Studio before relying on it."},
+ {"id":"378f87ed-3fbb-816a-9fe8-cfda4c503a22","title":"Tempest Freerunning | Parkour | High-Speed Camera","videoId":"p_CHRNGkB6I","playlist":"Portraits & Profiles","series":"Versiegelte Zeit","copyright":"","description":"The Tempest Freerunners captured on a high-speed camera. Featuring David, Caine, Ryan, Brady, and Luci. Thanks to John Dillon for bringing the team together.\n\nOne take. A shot of up to three seconds took forty minutes to an hour and a half to download, so there was only one.\n\nShot by Ciamac Parhizi.\nMore work: https://ciamac.com","tags":"Tempest Freerunning, parkour, freerunning, one take, high-speed camera, slow motion, action sports, Ciamac Parhizi, filmmaker","communityPost":"One take — because a single three-second shot took up to 90 minutes to pull off the high-speed camera. So the Tempest Freerunners got exactly one pass. David, Caine, Ryan, Brady, Luci.\n\n▶ https://www.youtube.com/watch?v=p_CHRNGkB6I\nMore work: https://ciamac.com","cpStatus":"Draft","note":""},
+ {"id":"378f87ed-3fbb-81f6-b6b2-cba352742ef7","title":"Ciamac Parhizi | Self-Portrait | Los Angeles","videoId":"o_44xIZJyzo","playlist":"Portraits & Profiles","series":"Versiegelte Zeit","copyright":"Partially blocked","description":"A self-portrait by Ciamac Parhizi, made shortly after arriving in Los Angeles. Music by Googoosh.\n\nOne take on a high-speed camera. A shot of up to three seconds took forty minutes to an hour and a half to download, so there was only one.\n\nShot and edited by Ciamac Parhizi.\nMore work: https://ciamac.com","tags":"Ciamac Parhizi, self-portrait, Los Angeles, Googoosh, one take, high-speed camera, short film, portrait, filmmaker","communityPost":"Right after I landed in Los Angeles, I turned the high-speed camera on myself. One take — a three-second shot took up to 90 minutes to download, so there was no second one. Scored to Googoosh.\n\n▶ https://www.youtube.com/watch?v=o_44xIZJyzo\nMore work: https://ciamac.com","cpStatus":"Draft","note":""},
+ {"id":"378f87ed-3fbb-810a-91d8-d085224c5e8d","title":"Claudia Salinas | Actress, Model & TV Host | Portrait","videoId":"EikC85uEB3Q","playlist":"Portraits & Profiles","series":"Versiegelte Zeit","copyright":"","description":"A high-speed portrait of Claudia Salinas, shot at 1000fps from the rooftop of the Molino building in downtown Los Angeles. One take: the rig needed about an hour to download each shot, and Claudia had to leave, so there was no second pass.\n\nClaudia Salinas is a Mexican-American actress, model, and TV host, Lee Strasberg trained, known for Crossing Over and Salvando al Soldado Pérez. @misssalinas\n\nShot, directed, and edited by Ciamac Parhizi.\nMore work: https://ciamac.com","tags":"Claudia Salinas, portrait, high-speed camera, 1000fps, slow motion, one take, actress, model, TV host, Lee Strasberg, Ciamac Parhizi, filmmaker","communityPost":"Rooftop of the Molino building, downtown LA, 1000fps. Claudia had to leave and each shot needed about an hour to download — so this portrait is a single take. Claudia Salinas: actress, model, TV host.\n\n▶ https://www.youtube.com/watch?v=EikC85uEB3Q\nMore work: https://ciamac.com","cpStatus":"Draft","note":"Top of the channel — ~30k views."},
+ {"id":"378f87ed-3fbb-811d-a9e9-d979a483dfac","title":"Donald Schultz | BASE Jumping & Wingsuit | Stunt Inc","videoId":"Vcl5z5op_Ac","playlist":"Action & Adventure","series":"","copyright":"","description":"Donald Schultz and friends BASE jumping and wingsuiting. GoPro footage cut together for the intensity and gallows humor of one of the most dangerous hobbies on earth.\n\nEdited by Ciamac Parhizi.\n@StuntIncorp\nMore work: https://ciamac.com","tags":"Donald Schultz, BASE jumping, wingsuit, Stunt Inc, GoPro, extreme sports, action, Ciamac Parhizi, filmmaker","communityPost":"BASE jumping and wingsuiting with Donald Schultz and friends. GoPro footage cut for the intensity — and the gallows humor — of one of the most dangerous hobbies on earth.\n\n▶ https://www.youtube.com/watch?v=Vcl5z5op_Ac\nMore work: https://ciamac.com","cpStatus":"Draft","note":"Copy doc has an optional ‘In memory of Ian Flanders’ line to consider."},
+ {"id":"378f87ed-3fbb-8160-b39d-f2aae59ab9e0","title":"Canadian Rally Championship 2013 | Rallye Defi","videoId":"waM25fP59bo","playlist":"Action & Adventure","series":"","copyright":"","description":"A promo cut from the 2013 Canadian Rally Championship season. Rallye Defi at Lac-des-Plages, Quebec, featuring the rivalry between Antoine L'Estage in his Mitsubishi Lancer Evo (Rockstar Energy) and Patrick Richard in his Subaru Impreza WRX STI (Subaru Rally Team Canada).\n\nEdited by Ciamac Parhizi.\nMore work: https://ciamac.com","tags":"Canadian Rally Championship, Rallye Defi, rally racing, motorsport, Antoine L'Estage, Patrick Richard, Subaru, Mitsubishi, Lac-des-Plages, Quebec, Ciamac Parhizi, filmmaker","communityPost":"Antoine L'Estage's Mitsubishi Evo against Patrick Richard's Subaru WRX STI — the rivalry that ran the 2013 Canadian Rally Championship. My promo cut from Rallye Defi, Lac-des-Plages, Quebec.\n\n▶ https://www.youtube.com/watch?v=waM25fP59bo\nMore work: https://ciamac.com","cpStatus":"Draft","note":""},
+ {"id":"378f87ed-3fbb-810b-b78c-e3caed5205cf","title":"TV for Two | Playboy TV | High-Speed Photography","videoId":"ej_qiX35CSY","playlist":"High-Speed & Cinematic","series":"","copyright":"","description":"A TV spot for Playboy's \"TV for Two\" channel, featuring high-speed photography.\n\nHigh-speed camera tech by Ciamac Parhizi.\nMore work: https://ciamac.com","tags":"Playboy TV, TV for Two, high-speed camera, slow motion, commercial, advertising, Ciamac Parhizi, filmmaker","communityPost":"A TV spot for Playboy's \"TV for Two\" channel, built on high-speed photography. The high-speed camera work is mine.\n\n▶ https://www.youtube.com/watch?v=ej_qiX35CSY\nMore work: https://ciamac.com","cpStatus":"Draft","note":""},
+ {"id":"378f87ed-3fbb-81dc-8679-f1984a812b70","title":"Simone Bargetze | Hollywood Stuntwoman Reel | High-Speed Camera","videoId":"db1VpH8Ydzg","playlist":"Portraits & Profiles","series":"","copyright":"","description":"Simone Bargetze is a Hollywood stuntwoman known for her work in Crank, Iron Man II, Lost, and Transformers. She was motion-captured riding a horse for Avatar. Here she gallops her own horse, Pace, at 1000fps on a high-speed camera.\n\nShot and edited by Ciamac Parhizi.\nMore work: https://ciamac.com","tags":"Simone Bargetze, stuntwoman, Hollywood, high-speed camera, slow motion, horse riding, Avatar, Crank, Iron Man, Ciamac Parhizi, filmmaker","communityPost":"Simone Bargetze has doubled in Crank, Iron Man II, Lost and Transformers — and was motion-captured on horseback for Avatar. Here she gallops her own horse, Pace, at 1000fps on a high-speed camera.\n\n▶ https://www.youtube.com/watch?v=db1VpH8Ydzg\nMore work: https://ciamac.com","cpStatus":"Draft","note":"~30k views. Not currently in the gallery — candidate to add."},
+ {"id":"378f87ed-3fbb-8141-8e91-c13cb8935373","title":"Angelina Zakirova | Fashion Film | Canon 5D Mark I","videoId":"0g5BNpia-KQ","playlist":"High-Speed & Cinematic","series":"","copyright":"","description":"A fashion film for 01 Magazine with Angelina Zakirova, former Bulgarian gymnast turned Hollywood stuntwoman, photographed by Andrew Macpherson. Shot on the Canon 5D the day the camera came out, cut entirely from the bad frames.\n\nFilmed and edited by Ciamac Parhizi.\nMore work: https://ciamac.com","tags":"Angelina Zakirova, fashion film, Canon 5D Mark I, bad frames, stuntwoman, Bulgarian gymnast, Andrew Macpherson, 01 Magazine, Ciamac Parhizi, filmmaker","communityPost":"Shot on the Canon 5D the day the camera came out, and cut entirely from the bad frames. A fashion film for 01 Magazine with Angelina Zakirova — Bulgarian gymnast turned Hollywood stuntwoman, photographed by Andrew Macpherson.\n\n▶ https://www.youtube.com/watch?v=0g5BNpia-KQ\nMore work: https://ciamac.com","cpStatus":"Draft","note":"LIVE title currently says ‘Mark II’ — correct to Mark I in Studio. Camera named on purpose (it’s the concept, allowed exception)."},
+ {"id":"378f87ed-3fbb-8134-8b33-f10f099ad45c","title":"Jason \"Mayhem\" Miller | BASE Jumping with Donald Schultz & Chuma","videoId":"hdkh4_quu9c","playlist":"Action & Adventure","series":"","copyright":"","description":"UFC fighter Jason \"Mayhem\" Miller goes BASE jumping with Donald Schultz and Chuma. What happens when a professional cage fighter meets extreme sports.\n\nEdited by Ciamac Parhizi.\nMore work: https://ciamac.com","tags":"Jason Mayhem Miller, Mayhem Miller, UFC, MMA, BASE jumping, Donald Schultz, Chuma, extreme sports, Ciamac Parhizi, filmmaker","communityPost":"What happens when a UFC cage fighter takes up BASE jumping? Jason \"Mayhem\" Miller throws himself off cliffs with Donald Schultz and Chuma.\n\n▶ https://www.youtube.com/watch?v=hdkh4_quu9c\nMore work: https://ciamac.com","cpStatus":"Draft","note":""},
+ {"id":"378f87ed-3fbb-819b-a365-e30b4e7d0436","title":"Charles Evans | A Tribute to a Hollywood Legend","videoId":"W6VLwCRvpgA","playlist":"Portraits & Profiles","series":"","copyright":"","description":"A tribute to Charles Evans (1926-2007): businessman, film producer, and brother of Robert Evans. Charles co-founded Evan-Picone, built a career in real estate and finance, and produced Tootsie, Monkey Shines, and Showgirls. He gave his brother Robert his start, setting in motion one of the most storied careers in Hollywood. Featuring rare family photographs, personal memories, and Robert Evans on camera.\n\nProduced by Charlie Evans Jr.\nRobert Evans interview filmed by Ciamac Parhizi. Edited by Ciamac Parhizi.\nFull tribute: https://charlesevanstribute.com\nMore work: https://ciamac.com","tags":"Charles Evans, Robert Evans, Hollywood, Tootsie, Evan-Picone, Showgirls, tribute, documentary, Charlie Evans Jr, Ciamac Parhizi, filmmaker","communityPost":"A tribute to Charles Evans — producer of Tootsie, co-founder of Evan-Picone, and the man who gave his brother Robert Evans his start in Hollywood. I filmed the Robert Evans interview and cut the piece.\n\n▶ https://www.youtube.com/watch?v=W6VLwCRvpgA\nMore work: https://ciamac.com","cpStatus":"Draft","note":""},
+ {"id":"378f87ed-3fbb-81da-84e5-dfc194f42c65","title":"Donald Schultz | Scientist, Adventurer & BASE Jumper | Onnit Alpha Brain","videoId":"QgN4lGHMbv8","playlist":"Action & Adventure","series":"","copyright":"","description":"A portrait of Donald Schultz, scientist and extreme adventurer. Donald works with animals around the world, and in his downtime he wingsuits and BASE jumps. We follow him boarding a helicopter in Lauterbrunnen, Switzerland, and launching off the cliff. He talks about what drives him to the edge, and where Onnit's Alpha Brain fits into his routine.\n\nFilmed with GoPro. Edited by Ciamac Parhizi.\nMore work: https://ciamac.com","tags":"Donald Schultz, BASE jumping, wingsuit, Lauterbrunnen, Switzerland, Onnit, Alpha Brain, extreme adventure, scientist, Ciamac Parhizi, filmmaker","communityPost":"Donald Schultz works with animals around the world. In his downtime he steps off cliffs in a wingsuit. We board a helicopter with him over Lauterbrunnen, Switzerland, and follow him off the edge.\n\n▶ https://www.youtube.com/watch?v=QgN4lGHMbv8\nMore work: https://ciamac.com","cpStatus":"Draft","note":""},
+ {"id":"378f87ed-3fbb-812f-85f6-fe273659b098","title":"Lucent Dossier Experience | Balinese Monkey Chant (Kecak) | 500fps High-Speed","videoId":"oKR90ItVPWE","playlist":"Performance & Culture","series":"Versiegelte Zeit","copyright":"","description":"Artists of the Lucent Dossier Experience perform the Balinese Monkey Chant (Kecak), captured at 500fps on a high-speed camera. The circus troupe brings ritual intensity to an ancient Balinese tradition.\n\nOne take. A shot of up to three seconds took forty minutes to an hour and a half to download, so there was only one.\n\nHigh-speed camera tech and editing by Ciamac Parhizi.\nMore work: https://ciamac.com","tags":"Lucent Dossier, Kecak, monkey chant, Balinese, one take, high-speed camera, 500fps, circus, performance, Ciamac Parhizi, filmmaker","communityPost":"Performers at The Brewery in downtown Los Angeles, caught at 500fps on a high-speed camera — ritual intensity stretched frame by frame.\n\n▶ https://www.youtube.com/watch?v=oKR90ItVPWE\nMore work: https://ciamac.com","cpStatus":"Draft","note":"UNRESOLVED: canonical note says performers are actually Paradox Pollack, but the live title still says Lucent Dossier. Confirm the troupe name and fix the live title before posting. CP draft sidesteps the name on purpose."},
+ {"id":"378f87ed-3fbb-81bd-8f21-e9741916b8ed","title":"DTS Surround Sound | 3D Commercial | High-Speed Camera","videoId":"jwHupzIl96M","playlist":"High-Speed & Cinematic","series":"","copyright":"","description":"A commercial for DTS Surround Sound, shot in stereoscopic 3D. Directed by Ross Ching. Ciamac Parhizi provided two IDT Y5 high-speed cameras, synced and triggered on set; each shot took twenty minutes per camera to download.\n\nHigh-speed camera tech by Ciamac Parhizi.\nDirected by Ross Ching.\nMore work: https://ciamac.com","tags":"DTS, surround sound, 3D, stereoscopic, high-speed camera, IDT Y5, commercial, Ross Ching, Ciamac Parhizi, filmmaker","communityPost":"A DTS Surround Sound commercial in stereoscopic 3D, directed by Ross Ching. I supplied and ran two IDT Y5 high-speed cameras, synced and triggered on set — each shot took twenty minutes per camera to download.\n\n▶ https://www.youtube.com/watch?v=jwHupzIl96M\nMore work: https://ciamac.com","cpStatus":"Draft","note":"IDT Y5 named on purpose — the gear IS the credit here (allowed brand exception). Verify @rossching handle."},
+ {"id":"378f87ed-3fbb-81ce-8741-eb0c9f81a9ea","title":"Carl Jung's Red Book | High-Resolution Scanning | Switzerland","videoId":"8w4iMtU6k5w","playlist":"Performance & Culture","series":"","copyright":"","description":"A documentary short on the high-resolution scanning of Carl Jung's Red Book (Liber Novus), commissioned by Digitalfusion. The manuscript was published in 2009 by W. W. Norton with the Philemon Foundation, under license from Jung's estate, after decades held privately by the family.\n\nI conducted the Hugh Milstein interview at Digitalfusion's Culver City facility and cut the piece. The Switzerland scanning footage was shot by Mehdi Sahebi, six high-resolution frames per page.\n\nDirected and edited by Ciamac Parhizi.\nMore work: https://ciamac.com","tags":"Carl Jung, Red Book, Liber Novus, high-resolution scanning, manuscript, Digitalfusion, W. W. Norton, Philemon Foundation, Switzerland, Mehdi Sahebi, Ciamac Parhizi, filmmaker","communityPost":"Carl Jung kept the Red Book private for decades. When it was finally scanned for publication, I documented the process — interviewing Hugh Milstein at Digitalfusion and cutting the piece. Six high-resolution frames per page.\n\n▶ https://www.youtube.com/watch?v=8w4iMtU6k5w\nMore work: https://ciamac.com","cpStatus":"Draft","note":"~22k views."},
+ {"id":"378f87ed-3fbb-81e2-a836-e790e7e4ef23","title":"Luchi Estevez | Performance Artist, Healer & Conscious Activist | Portrait","videoId":"UueKy9vJ3o8","playlist":"Portraits & Profiles","series":"Versiegelte Zeit","copyright":"","description":"A portrait of Luchi Estevez, a conceptual lifestyle artist, eco-centric pioneer, and medicine woman based in Los Angeles. She combines shamanic traditions, kundalini yoga, sound baths, and meditation into immersive healing experiences. She is the creator of the Chakrao Experience, founder of the La Luchi Foundation (a 501(c)(3) serving children in underserved Miami communities), and publisher of LA LUCHI magazine. Actress, singer, dancer, globetrotter.\n\nOne take on a high-speed camera. A shot of up to three seconds took forty minutes to an hour and a half to download, so there was only one.\n\nMusic by Matthew Herbert.\nFilmed and edited by Ciamac Parhizi.\nMore work: https://ciamac.com","tags":"Luchi Estevez, medicine woman, kundalini yoga, sound bath, Chakrao Experience, La Luchi, performance art, one take, high-speed camera, slow motion, Ciamac Parhizi, filmmaker","communityPost":"A one-take, high-speed portrait of Luchi Estevez — medicine woman, performance artist, and founder of the La Luchi Foundation. Scored to Matthew Herbert.\n\n▶ https://www.youtube.com/watch?v=UueKy9vJ3o8\nMore work: https://ciamac.com","cpStatus":"Draft","note":""}
+]
+</script>
+
+<script>
+const CPLIMIT = 288;
+const STORE = "yt-copy-workbench-v1";
+const ORIG = JSON.parse(document.getElementById("data").textContent);
+let saved = {};
+try { saved = JSON.parse(localStorage.getItem(STORE) || "{}"); } catch(e){ saved = {}; }
+
+// working copy = original merged with saved edits
+const data = ORIG.map(o => Object.assign({}, o, saved[o.id] || {}));
+
+const listEl = document.getElementById("list");
+const statusEl = document.getElementById("status");
+const toastEl = document.getElementById("toast");
+const fields = ["title","description","tags","communityPost","cpStatus"];
+
+function persist(){
+  const diff = {};
+  data.forEach(d => {
+    const o = ORIG.find(x => x.id === d.id);
+    const changed = {};
+    fields.forEach(f => { if (d[f] !== o[f]) changed[f] = d[f]; });
+    if (Object.keys(changed).length) diff[d.id] = changed;
+  });
+  saved = diff;
+  localStorage.setItem(STORE, JSON.stringify(diff));
+  refreshStatus();
+}
+
+function isEdited(d){
+  const o = ORIG.find(x => x.id === d.id);
+  return fields.some(f => d[f] !== o[f]);
+}
+
+function refreshStatus(){
+  const n = data.filter(isEdited).length;
+  statusEl.textContent = n ? (n + " video" + (n>1?"s":"") + " edited — not yet synced to Notion") : "No edits yet · all 16 match Notion";
+  document.querySelectorAll(".card").forEach(c => {
+    const d = data.find(x => x.id === c.dataset.id);
+    c.classList.toggle("edited", isEdited(d));
+    const dot = c.querySelector(".edited-dot");
+    if (dot) dot.style.display = isEdited(d) ? "inline" : "none";
+  });
+}
+
+function toast(msg){
+  toastEl.textContent = msg; toastEl.classList.add("show");
+  setTimeout(()=>toastEl.classList.remove("show"), 1600);
+}
+
+function ccText(v){
+  const n = v.length;
+  return n + " chars · " + (n<=CPLIMIT ? (CPLIMIT-n)+" before “…read more”" : (n-CPLIMIT)+" over the visible cutoff");
+}
+
+function el(tag, cls, txt){ const e=document.createElement(tag); if(cls)e.className=cls; if(txt!=null)e.textContent=txt; return e; }
+
+function render(){
+  listEl.innerHTML = "";
+  const q = document.getElementById("search").value.trim().toLowerCase();
+  data.forEach(d => {
+    if (q && !(d.title+" "+d.playlist+" "+d.tags+" "+d.series).toLowerCase().includes(q)) return;
+    const card = el("div","card"); card.dataset.id = d.id;
+
+    const head = el("div","chead");
+    const titleWrap = el("div");
+    const ti = el("input","ti"); ti.value = d.title; ti.setAttribute("aria-label","Title");
+    ti.oninput = () => { d.title = ti.value; persist(); };
+    titleWrap.appendChild(ti);
+    const dot = el("span","edited-dot","● edited"); dot.style.display="none";
+    titleWrap.appendChild(dot);
+    head.appendChild(titleWrap);
+    card.appendChild(head);
+
+    const badges = el("div","badges");
+    if (d.playlist) badges.appendChild(el("span","chip", d.playlist));
+    if (d.series) badges.appendChild(el("span","chip s", "★ "+d.series));
+    badges.appendChild(el("span","chip pub","Public"));
+    if (d.copyright) badges.appendChild(el("span","chip w", d.copyright));
+    const link = el("a","vid","▶ youtu.be/"+d.videoId); link.href="https://www.youtube.com/watch?v="+d.videoId; link.target="_blank";
+    badges.appendChild(link);
+    card.appendChild(badges);
+
+    if (d.note){ const nt = el("div","note","⚠ "+d.note); card.appendChild(nt); }
+
+    // Description
+    card.appendChild(makeField("YouTube Description","description",d,"desc"));
+    // Tags
+    card.appendChild(makeField("Tags","tags",d,"tags"));
+    // Community Post (with counter)
+    card.appendChild(makeCP(d));
+
+    // CP status row
+    const row = el("div","cprow");
+    row.appendChild(el("label",null,"Community post status:"));
+    const sel = document.createElement("select");
+    ["None","Draft","Scheduled","Posted"].forEach(o=>{ const op=document.createElement("option"); op.value=o; op.textContent=o; if(d.cpStatus===o)op.selected=true; sel.appendChild(op); });
+    sel.onchange = () => { d.cpStatus = sel.value; persist(); };
+    row.appendChild(sel);
+    const rb = el("button","restore","↺ restore this video");
+    rb.onclick = () => { const o=ORIG.find(x=>x.id===d.id); fields.forEach(f=>d[f]=o[f]); persist(); render(); toast("Restored"); };
+    row.appendChild(rb);
+    card.appendChild(row);
+
+    listEl.appendChild(card);
+  });
+  refreshStatus();
+}
+
+function makeField(label, key, d, cls){
+  const f = el("div","field");
+  const lab = el("div","flabel"); lab.appendChild(el("span",null,label));
+  f.appendChild(lab);
+  const ta = document.createElement("textarea"); ta.className=cls; ta.value=d[key];
+  ta.oninput = () => { d[key]=ta.value; persist(); };
+  f.appendChild(ta);
+  return f;
+}
+
+function makeCP(d){
+  const f = el("div","field");
+  const lab = el("div","flabel");
+  lab.appendChild(el("span",null,"Community Post"));
+  const cc = el("span","cc"); cc.textContent = ccText(d.communityPost);
+  if (d.communityPost.length>CPLIMIT) cc.classList.add("over");
+  lab.appendChild(cc);
+  f.appendChild(lab);
+  const ta = document.createElement("textarea"); ta.className="cp"; ta.value=d.communityPost;
+  ta.oninput = () => { d.communityPost=ta.value; cc.textContent=ccText(ta.value); cc.classList.toggle("over",ta.value.length>CPLIMIT); persist(); };
+  f.appendChild(ta);
+  f.appendChild(el("div","hr288","Tip: keep the hook in the first "+CPLIMIT+" characters — that’s all that shows before “…read more”."));
+  return f;
+}
+
+function exportPayload(){
+  return data.map(d => ({ id:d.id, title:d.title, description:d.description, tags:d.tags, communityPost:d.communityPost, cpStatus:d.cpStatus, edited:isEdited(d) }));
+}
+
+document.getElementById("exportBtn").onclick = () => {
+  const blob = new Blob([JSON.stringify(exportPayload(),null,2)], {type:"application/json"});
+  const a = document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download = "yt-copy-edits.json"; a.click();
+  toast("Downloaded yt-copy-edits.json");
+};
+document.getElementById("copyBtn").onclick = async () => {
+  const text = JSON.stringify(exportPayload(),null,2);
+  try { await navigator.clipboard.writeText(text); toast("Copied — paste back into Claude to sync"); }
+  catch(e){ const t=document.createElement("textarea"); t.value=text; document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove(); toast("Copied"); }
+};
+document.getElementById("resetAll").onclick = () => {
+  if(!confirm("Discard ALL edits and restore the original copy?")) return;
+  localStorage.removeItem(STORE); saved={}; data.forEach((d,i)=>fields.forEach(f=>d[f]=ORIG[i][f])); render(); toast("All reset");
+};
+document.getElementById("search").oninput = render;
+
+render();
+</script>
+</body>
+</html>
+`;
