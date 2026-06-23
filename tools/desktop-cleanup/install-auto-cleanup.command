@@ -1,61 +1,112 @@
 #!/bin/bash
 # ==========================================================================
-#  Housekeeper installer (v5, post second audit). Double-click ONCE.
-#  Guarantees: never deletes, never overwrites, never follows symlinks,
-#  never moves across filesystems, verifies every move, single-instance
-#  (PID) lock, fails the whole run safely on any permission/enumeration error.
+#  Housekeeper installer (v6, post third audit). Double-click ONCE.
+#  Validates artifacts BEFORE touching the system, refuses to overwrite any
+#  existing install, and reports a failed first run honestly.
+#  The agent never deletes USER CONTENT (it removes only its own lock and
+#  incomplete-report temp files); never overwrites; never follows symlinks
+#  (including intermediate path components); never moves across filesystems.
 # ==========================================================================
 set -euo pipefail
 CLEAN_DIR="$HOME/.cleanup"
 ENGINE="$CLEAN_DIR/housekeeper.sh"
 PLIST="$HOME/Library/LaunchAgents/com.ciamac.housekeeper.plist"
 LABEL="com.ciamac.housekeeper"
+
 echo "Installing Housekeeper..."
+# (B1) refuse to overwrite an existing install
+for p in "$ENGINE" "$PLIST"; do
+  if [ -e "$p" ] || [ -L "$p" ]; then
+    echo "refusing: path already exists: $p" >&2
+    echo "Back it up and remove it first if you intend to reinstall." >&2
+    exit 1
+  fi
+done
 if [ -L "$CLEAN_DIR" ]; then echo "refusing: $CLEAN_DIR is a symlink" >&2; exit 1; fi
 mkdir -p "$CLEAN_DIR" "$HOME/Library/LaunchAgents"
-chmod 700 "$CLEAN_DIR" 2>/dev/null || true
+if ! chmod 700 "$CLEAN_DIR"; then echo "cannot secure $CLEAN_DIR" >&2; exit 1; fi
 
-cat > "$ENGINE" <<'ENGINE_EOF'
+TMP_ENGINE="$CLEAN_DIR/.install.engine.$$"
+TMP_PLIST="$CLEAN_DIR/.install.plist.$$"
+trap 'rm -f "$TMP_ENGINE" "$TMP_PLIST"' EXIT
+
+cat > "$TMP_ENGINE" <<'ENGINE_EOF'
 #!/bin/bash
 set -euo pipefail
 
 CLEAN="$HOME/.cleanup"
 if [ -L "$CLEAN" ]; then printf 'refusing: %s is a symlink\n' "$CLEAN" >&2; exit 1; fi
-mkdir -p "$CLEAN"; chmod 700 "$CLEAN" 2>/dev/null || true
+mkdir -p "$CLEAN"
+if ! chmod 700 "$CLEAN"; then printf 'cannot secure %s\n' "$CLEAN" >&2; exit 1; fi
 LOG="$CLEAN/housekeeper.log"
 log(){ printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$LOG"; }
 
-# Portable stat helpers (BSD first, GNU fallback); nonzero exit on failure.
 file_mtime(){ local m; if m=$(stat -f %m "$1" 2>/dev/null); then printf '%s' "$m"; return 0; fi; if m=$(stat -c %Y "$1" 2>/dev/null); then printf '%s' "$m"; return 0; fi; return 1; }
 file_dev(){   local d; if d=$(stat -f %d "$1" 2>/dev/null); then printf '%s' "$d"; return 0; fi; if d=$(stat -c %d "$1" 2>/dev/null); then printf '%s' "$d"; return 0; fi; return 1; }
 now_epoch(){ date +%s; }
 SETTLE=120
 
-# ---- single-instance lock: PID-based, never age-expired ----
+# Create DIR (== ROOT or a descendant) one component at a time, refusing if any
+# component is a symlink or a non-directory. Defeats intermediate-symlink
+# traversal that "mkdir -p" would follow. ROOT must be a real, non-symlink dir.
+ensure_dir_no_symlink(){
+  local root="$1" dir="$2" rel cur comp rc=0
+  if [ -L "$root" ] || [ ! -d "$root" ]; then log "ABORT root invalid: $root"; return 1; fi
+  case "$dir" in
+    "$root") return 0 ;;
+    "$root"/*) rel="${dir#"$root"/}" ;;
+    *) log "ABORT dir not under root: $dir"; return 1 ;;
+  esac
+  cur="$root"
+  local IFS=/
+  set -f
+  for comp in $rel; do
+    if [ -z "$comp" ]; then continue; fi
+    if [ "$comp" = "." ] || [ "$comp" = ".." ]; then log "ABORT bad component: $dir"; rc=1; break; fi
+    cur="$cur/$comp"
+    if [ -L "$cur" ]; then log "ABORT symlink component: $cur"; rc=1; break; fi
+    if [ -e "$cur" ]; then
+      if [ ! -d "$cur" ]; then log "ABORT non-dir component: $cur"; rc=1; break; fi
+    else
+      if ! mkdir "$cur" 2>/dev/null; then log "FAIL mkdir: $cur"; rc=1; break; fi
+      if [ -L "$cur" ]; then log "ABORT symlink after mkdir: $cur"; rc=1; break; fi
+    fi
+  done
+  set +f
+  return $rc
+}
+
+# ---- single-instance lock: PID-based, symlink-rejecting, never age-expired ----
 LOCK="$CLEAN/.lock"
-acquire_lock(){
+acquire_lock(){           # 0=acquired, 1=another instance, 2=hard error
+  if [ -L "$LOCK" ]; then log "ABORT lock is symlink: $LOCK"; return 2; fi
+  if [ -e "$LOCK" ] && [ ! -d "$LOCK" ]; then log "ABORT lock not a dir: $LOCK"; return 2; fi
   if mkdir "$LOCK" 2>/dev/null; then printf '%s' "$$" > "$LOCK/pid"; return 0; fi
+  if [ -L "$LOCK" ]; then log "ABORT lock is symlink: $LOCK"; return 2; fi
+  if [ -L "$LOCK/pid" ]; then log "ABORT lock/pid is symlink"; return 2; fi
   local pid=""; [ -f "$LOCK/pid" ] && pid=$(cat "$LOCK/pid" 2>/dev/null || true)
-  if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then return 1; fi   # live owner
+  if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then return 1; fi
+  if [ -L "$LOCK/pid" ]; then log "ABORT lock/pid is symlink"; return 2; fi
   rm -f "$LOCK/pid" 2>/dev/null || true; rmdir "$LOCK" 2>/dev/null || true
+  if [ -L "$LOCK" ]; then log "ABORT lock is symlink: $LOCK"; return 2; fi
   if mkdir "$LOCK" 2>/dev/null; then printf '%s' "$$" > "$LOCK/pid"; return 0; fi
   return 1
 }
 release_lock(){
+  [ -L "$LOCK" ] && return 0
+  [ -L "$LOCK/pid" ] && return 0
   local pid=""; [ -f "$LOCK/pid" ] && pid=$(cat "$LOCK/pid" 2>/dev/null || true)
   [ "$pid" = "$$" ] && { rm -f "$LOCK/pid" 2>/dev/null || true; rmdir "$LOCK" 2>/dev/null || true; }
 }
 
-# ---- the ONLY mover ----
+# ---- the ONLY mover (root = trusted ancestor for symlink-safe mkdir) ----
 safe_move(){
-  local src="$1" destdir="$2" base target sdev ddev
+  local src="$1" destdir="$2" root="$3" base target sdev ddev
   base=$(basename "$src")
   if [ -L "$src" ];  then log "SKIP symlink source: $src"; return 1; fi
   if [ ! -e "$src" ]; then log "SKIP vanished: $src"; return 1; fi
-  if [ -L "$destdir" ]; then log "ABORT dest is symlink: $destdir"; return 1; fi
   if [ -e "$destdir" ] && [ ! -d "$destdir" ]; then log "ABORT dest not a dir: $destdir"; return 1; fi
-  if ! mkdir -p "$destdir"; then log "FAIL mkdir: $destdir"; return 1; fi
-  if [ -L "$destdir" ]; then log "ABORT dest became symlink: $destdir"; return 1; fi
+  if ! ensure_dir_no_symlink "$root" "$destdir"; then log "ABORT unsafe destdir: $destdir"; return 1; fi
   if ! sdev=$(file_dev "$src");     then log "FAIL stat dev: $src"; return 1; fi
   if ! ddev=$(file_dev "$destdir"); then log "FAIL stat dev: $destdir"; return 1; fi
   if [ "$sdev" != "$ddev" ]; then log "ABORT cross-filesystem: $src -> $destdir"; return 1; fi
@@ -79,15 +130,23 @@ bucket(){
   esac
 }
 
-# Probe every existing root up front; abort the WHOLE run if any fails.
+# Probe roots (and existing archive ancestors) up front; abort WHOLE run on any
+# permission/symlink/enumeration problem. Never treat a denial as "empty".
 preflight(){
   local d
   for d in "$HOME/Desktop" "$HOME/Downloads" "$HOME/Developer"; do
     [ -e "$d" ] || continue
-    if [ -L "$d" ];   then log "PREFLIGHT ABORT: symlink root $d"; return 1; fi
-    if [ ! -d "$d" ]; then log "PREFLIGHT ABORT: not a dir $d"; return 1; fi
-    if [ ! -r "$d" ]; then log "PREFLIGHT ABORT: unreadable $d"; return 1; fi
-    if ! ls "$d" >/dev/null 2>&1; then log "PREFLIGHT ABORT: cannot enumerate $d (permission/TCC?)"; return 1; fi
+    [ -L "$d" ] && { log "PREFLIGHT ABORT: symlink root $d"; return 1; }
+    [ -d "$d" ] || { log "PREFLIGHT ABORT: not a dir $d"; return 1; }
+    [ -r "$d" ] || { log "PREFLIGHT ABORT: unreadable $d"; return 1; }
+    [ -w "$d" ] || { log "PREFLIGHT ABORT: unwritable $d"; return 1; }
+    ls "$d" >/dev/null 2>&1 || { log "PREFLIGHT ABORT: cannot enumerate $d (permission/TCC?)"; return 1; }
+  done
+  for d in "$HOME/Downloads/_Archive" "$HOME/Developer/_archive_scratch"; do
+    [ -e "$d" ] || continue
+    [ -L "$d" ] && { log "PREFLIGHT ABORT: symlink archive $d"; return 1; }
+    [ -d "$d" ] || { log "PREFLIGHT ABORT: archive not a dir $d"; return 1; }
+    [ -w "$d" ] || { log "PREFLIGHT ABORT: archive unwritable $d"; return 1; }
   done
   return 0
 }
@@ -103,7 +162,7 @@ sort_dir(){
     case "$b" in *.crdownload|*.part|*.download|*.partial|*.tmp|*.opdownload) log "SKIP in-progress: $f"; continue ;; esac
     if ! mt=$(file_mtime "$f"); then log "FAIL stat (skip): $f"; continue; fi
     [ $(( now - mt )) -lt "$SETTLE" ] && { log "SKIP settling: $f"; continue; }
-    d=$(bucket "$b"); safe_move "$f" "$SRC/$d" || true
+    d=$(bucket "$b"); safe_move "$f" "$SRC/$d" "$SRC" || true
   done
 }
 
@@ -121,7 +180,7 @@ archive_old(){
       [ -L "$f" ] && { log "SKIP symlink: $f"; continue; }
       if ! mt=$(file_mtime "$f"); then log "FAIL stat (skip): $f"; continue; fi
       age=$(( (now - mt) / 86400 ))
-      [ "$age" -ge "$thresh" ] && { safe_move "$f" "$DEST/$sub" || true; }
+      [ "$age" -ge "$thresh" ] && { safe_move "$f" "$DEST/$sub" "$SRC" || true; }
     done
   done
 }
@@ -134,7 +193,7 @@ clean_developer(){
   for item in "$DEV"/_cc_done_*; do
     [ -e "$item" ] || continue
     [ -L "$item" ] && { log "SKIP symlink: $item"; continue; }
-    safe_move "$item" "$DEST" || true
+    safe_move "$item" "$DEST" "$DEV" || true
   done
 }
 
@@ -167,9 +226,16 @@ report_backups(){
   log "REPORT wrote $REP"; return 0
 }
 
-# Test hook: when HK_NO_RUN=1 the file can be sourced without auto-running.
+# Test hook: HK_NO_RUN=1 sources the file (functions only) without running.
 if [ "${HK_NO_RUN:-}" != "1" ]; then
-  if ! acquire_lock; then log "another instance running; exit"; exit 0; fi
+  # Call in a condition so a non-zero return does not trip `set -e`.
+  if acquire_lock; then
+    :
+  else
+    lrc=$?
+    if [ "$lrc" -eq 1 ]; then log "another instance running; exit"; exit 0; fi
+    log "lock error; abort"; exit 1
+  fi
   trap release_lock EXIT
   log "=== run start ==="
   if ! preflight; then log "=== aborted: preflight failed ==="; exit 1; fi
@@ -181,9 +247,8 @@ if [ "${HK_NO_RUN:-}" != "1" ]; then
   log "=== run end ==="
 fi
 ENGINE_EOF
-chmod +x "$ENGINE"
 
-cat > "$PLIST" <<PLIST_EOF
+cat > "$TMP_PLIST" <<PLIST_EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -191,6 +256,8 @@ cat > "$PLIST" <<PLIST_EOF
   <key>Label</key><string>$LABEL</string>
   <key>ProgramArguments</key>
   <array><string>/bin/bash</string><string>$ENGINE</string></array>
+  <key>EnvironmentVariables</key>
+  <dict><key>PATH</key><string>/usr/bin:/bin:/usr/sbin:/sbin</string></dict>
   <key>StartCalendarInterval</key>
   <dict><key>Hour</key><integer>12</integer><key>Minute</key><integer>0</integer></dict>
   <key>RunAtLoad</key><true/>
@@ -200,12 +267,35 @@ cat > "$PLIST" <<PLIST_EOF
 </plist>
 PLIST_EOF
 
+# (B6) validate BEFORE installing or loading anything
+if ! /bin/bash -n "$TMP_ENGINE"; then echo "engine failed syntax check" >&2; exit 1; fi
+if command -v plutil >/dev/null 2>&1; then
+  if ! plutil -lint "$TMP_PLIST" >/dev/null; then echo "plist failed plutil -lint" >&2; exit 1; fi
+else
+  echo "(plutil not found - skipping plist lint; validate on macOS before trusting)"
+fi
+chmod 700 "$TMP_ENGINE"
+
+# atomic install (paths confirmed absent above; mv -n won't clobber)
+if [ -e "$ENGINE" ] || [ -L "$ENGINE" ]; then echo "refusing: $ENGINE appeared mid-install" >&2; exit 1; fi
+mv -n "$TMP_ENGINE" "$ENGINE" || { echo "failed to install engine" >&2; exit 1; }
+if [ -e "$PLIST" ] || [ -L "$PLIST" ]; then echo "refusing: $PLIST appeared mid-install" >&2; rm -f "$ENGINE"; exit 1; fi
+mv -n "$TMP_PLIST" "$PLIST" || { echo "failed to install plist" >&2; exit 1; }
+trap - EXIT
+
+# (B5) run once with HONEST failure, BEFORE scheduling the agent
+if ! /bin/bash "$ENGINE"; then
+  echo "Installed files, but the first validation run FAILED." >&2
+  echo "Inspect ~/.cleanup/housekeeper.log. The agent was NOT scheduled." >&2
+  exit 1
+fi
+
 if command -v launchctl >/dev/null 2>&1; then
   launchctl unload "$PLIST" 2>/dev/null || true
-  launchctl load "$PLIST" && echo "agent loaded."
+  launchctl load "$PLIST" || { echo "launchctl load failed" >&2; exit 1; }
+  echo "agent loaded."
 else
   echo "(not macOS - skipping launchctl load.)"
 fi
-/bin/bash "$ENGINE" || true
-echo "Done. Log: ~/.cleanup/housekeeper.log"
+echo "Done. First run succeeded. Log: ~/.cleanup/housekeeper.log"
 echo "Press any key to close."; read -n 1 -s 2>/dev/null || true

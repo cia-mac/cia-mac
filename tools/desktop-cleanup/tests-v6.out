@@ -1,0 +1,27 @@
+### 1. SAME-FS sort works; settle + in-progress suffix skipped ###
+  PASS: sort/settle/suffix
+### 2. COLLISION preserves both copies ###
+  PASS: collision safe
+### 3. HIDDEN files left alone ###
+  PASS: dotfiles
+### 4. _cc_done_* only; active _cc_* untouched ###
+  PASS: developer marker
+### 5. ARCHIVE >30d moved; intermediate _Archive SYMLINK refused (B2) ###
+  PASS: intermediate symlink refused
+### 6. LOCK symlink rejected; target file NOT deleted (B3) ###
+  PASS: lock symlink rejected
+### 7. PREFLIGHT: symlinked root aborts whole run ###
+  PASS: preflight whole-run abort
+### 8. CROSS-FILESYSTEM refused (if a distinct fs is available) ###
+  PASS: cross-fs refused
+### 9. REPORT atomic on du failure (no committed report, no partial) ###
+  PASS: report atomic
+### 10. PID lock: dead reclaimed, live respected ###
+  PASS: dead reclaimed
+  PASS: live respected
+### 11. INSTALLER refuses to overwrite an existing engine (B1) ###
+  PASS: installer refuses overwrite
+### 12. INSTALLER happy path installs + first run succeeds ###
+  PASS: installer happy path
+
+SUMMARY: 13 passed, 0 failed
