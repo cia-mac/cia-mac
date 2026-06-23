@@ -1,4 +1,8 @@
-<!DOCTYPE html>
+// Auto-generated workbench markup, served only via the auth-gated route handler
+// in this folder. Editing the source of truth lives in the @ciamac YouTube
+// tracker (Notion); this file is a convenience editor.
+/* eslint-disable */
+export const WORKBENCH_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -260,3 +264,4 @@ render();
 </script>
 </body>
 </html>
+`;
