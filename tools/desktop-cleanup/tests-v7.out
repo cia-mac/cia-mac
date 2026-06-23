@@ -1,0 +1,33 @@
+### 1. TWO-RUN STABILITY: not moved on run 1, moved on run 2 (B2) ###
+  PASS: stable file moves only on 2nd run
+### 2. CHANGED-between-runs is NOT moved (B2) ###
+  PASS: changed file not moved
+### 3. FRESH + in-progress suffix never moved (even after 2 runs) ###
+  PASS: fresh + .part never moved
+### 4. COLLISION preserves both copies ###
+  PASS: collision safe
+### 5. HIDDEN files left alone; visible moved on 2nd run ###
+  PASS: dotfiles
+### 6. _cc_done_* only (single run); active _cc_* untouched ###
+  PASS: developer marker
+### 7. ARCHIVE >30d; intermediate _Archive SYMLINK refused (B2 v6) ###
+  PASS: intermediate symlink refused
+### 8. LOCK symlink rejected; target NOT deleted ###
+  PASS: lock symlink rejected
+### 9. PREFLIGHT: symlinked root aborts whole run ###
+  PASS: preflight whole-run abort
+### 10. CROSS-FILESYSTEM refused (if distinct fs available) ###
+  PASS: cross-fs refused
+### 11. REPORT atomic on du failure ###
+  PASS: report atomic
+### 12. PID lock: dead reclaimed; live respected ###
+  PASS: dead reclaimed
+  PASS: live respected
+### 13. PID-REUSE: live PID with mismatched start time is reclaimed ###
+  PASS: pid-reuse reclaimed
+### 14. INSTALLER refuses to overwrite existing engine ###
+  PASS: installer refuses overwrite
+### 15. INSTALLER happy path: installs + first run succeeds ###
+  PASS: installer happy path
+
+SUMMARY: 16 passed, 0 failed

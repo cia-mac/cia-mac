@@ -11,6 +11,9 @@ Runs daily at noon and at login (via a `launchd` LaunchAgent), and:
 
 - **Sorts** loose files in `~/Desktop` and `~/Downloads` into category folders:
   `Images / Video / Audio / Documents / Archives / Installers / Code / Other`.
+  A file is moved **only after it has been observed unchanged across two
+  separate runs** (two-run stability), so a file still being written — even one
+  paused mid-write for minutes — is never moved.
 - **Archives** `~/Downloads` files older than 30 days (installers: 7 days) into
   `~/Downloads/_Archive/YYYY-MM/`.
 - **Sweeps Developer scratch** — but *only* items you explicitly rename to start
@@ -78,10 +81,20 @@ Additional protections:
 - **Preflight** probes every existing root for readability/enumeration/writability
   and aborts the entire run on any permission/TCC/symlink failure (never treats a
   denied directory as "empty").
-- **Installer** refuses to overwrite an existing engine/plist, validates the
-  artifacts with `bash -n` and `plutil -lint` **before** installing, installs
-  atomically, then runs once and reports a failed first run honestly (no false
-  "Done"). `chmod 700` on `~/.cleanup` fails closed.
+- **Installer** refuses to overwrite an existing engine/plist, creates its temp
+  artifacts with `mktemp` (fresh `O_EXCL` files, no predictable `$$` paths, no
+  symlink following) and verifies they are regular non-symlink files, validates
+  with `bash -n` and `plutil -lint` **before** installing, installs atomically,
+  then runs once and reports a failed first run honestly (no false "Done").
+  `chmod 700` on `~/.cleanup` fails closed. (If the plist path races in after the
+  engine is written, the installer rolls back *its own* just-written engine —
+  never user content.)
+- **Two-run stability** for Desktop/Downloads: the engine records each loose
+  file's `dev:inode:size:mtime` in an agent-owned state file and only moves it on
+  a later run if every value is unchanged. The report partial file is also created
+  with `mktemp`.
+- **Lock** stores the owner PID *and* its process start time, so a reused PID
+  after a crash is detected and the stale lock reclaimed.
 - The launchd job runs with an explicit `PATH` (`/usr/bin:/bin:/usr/sbin:/sbin`).
 - **Settle time**: files modified in the last 120s, and known in-progress
   download suffixes (`.crdownload`, `.part`, `.download`, `.partial`, `.tmp`,
@@ -96,12 +109,13 @@ Additional protections:
 
 ## Review status
 
-Independently audited three times (external review). Round 1: 8 issues.
+Independently audited four times (external review). Round 1: 8 issues.
 Round 2: 4 blockers + hardening. Round 3: 6 blockers (installer overwrite,
 intermediate-symlink traversal, symlinked-lock deletion, unsafe test cleanup,
-hidden install failure, install-before-validate) + hardening — all addressed
-here. The portable test suite (`tests-v6.sh`) runs every fixture under a
-validated `mktemp -d` root.
+hidden install failure, install-before-validate) + hardening. Round 4: 2 blockers
+(predictable `$$` temp paths → `mktemp`; age-only settle → two-run stability) plus
+PID-reuse hardening — all addressed here. The portable test suite (`tests-v7.sh`)
+runs every fixture under a validated `mktemp -d` root (16 assertions).
 
 **Still required before trusting the daily schedule:** run on a real Mac and
 confirm `/bin/bash --version` (3.2), `bash -n housekeeper.sh`, `plutil -lint`

@@ -10,12 +10,12 @@ log(){ printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$LOG"; }
 
 file_mtime(){ local m; if m=$(stat -f %m "$1" 2>/dev/null); then printf '%s' "$m"; return 0; fi; if m=$(stat -c %Y "$1" 2>/dev/null); then printf '%s' "$m"; return 0; fi; return 1; }
 file_dev(){   local d; if d=$(stat -f %d "$1" 2>/dev/null); then printf '%s' "$d"; return 0; fi; if d=$(stat -c %d "$1" 2>/dev/null); then printf '%s' "$d"; return 0; fi; return 1; }
+# dev:inode:size:mtime identity (BSD then GNU)
+file_ident(){ local s; if s=$(stat -f '%d:%i:%z:%m' "$1" 2>/dev/null); then printf '%s' "$s"; return 0; fi; if s=$(stat -c '%d:%i:%s:%Y' "$1" 2>/dev/null); then printf '%s' "$s"; return 0; fi; return 1; }
+proc_start(){ ps -o lstart= -p "$1" 2>/dev/null | tr -s ' ' | sed 's/^ *//;s/ *$//'; }
 now_epoch(){ date +%s; }
 SETTLE=120
 
-# Create DIR (== ROOT or a descendant) one component at a time, refusing if any
-# component is a symlink or a non-directory. Defeats intermediate-symlink
-# traversal that "mkdir -p" would follow. ROOT must be a real, non-symlink dir.
 ensure_dir_no_symlink(){
   local root="$1" dir="$2" rel cur comp rc=0
   if [ -L "$root" ] || [ ! -d "$root" ]; then log "ABORT root invalid: $root"; return 1; fi
@@ -43,30 +43,38 @@ ensure_dir_no_symlink(){
   return $rc
 }
 
-# ---- single-instance lock: PID-based, symlink-rejecting, never age-expired ----
+# ---- single-instance lock: PID + process-start, symlink-rejecting ----
 LOCK="$CLEAN/.lock"
+write_lock_owner(){ { printf '%s\n' "$$"; proc_start "$$"; } > "$LOCK/pid"; }
 acquire_lock(){           # 0=acquired, 1=another instance, 2=hard error
   if [ -L "$LOCK" ]; then log "ABORT lock is symlink: $LOCK"; return 2; fi
   if [ -e "$LOCK" ] && [ ! -d "$LOCK" ]; then log "ABORT lock not a dir: $LOCK"; return 2; fi
-  if mkdir "$LOCK" 2>/dev/null; then printf '%s' "$$" > "$LOCK/pid"; return 0; fi
+  if mkdir "$LOCK" 2>/dev/null; then write_lock_owner; return 0; fi
   if [ -L "$LOCK" ]; then log "ABORT lock is symlink: $LOCK"; return 2; fi
   if [ -L "$LOCK/pid" ]; then log "ABORT lock/pid is symlink"; return 2; fi
-  local pid=""; [ -f "$LOCK/pid" ] && pid=$(cat "$LOCK/pid" 2>/dev/null || true)
-  if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then return 1; fi
+  local pid sstart nstart
+  pid=$(sed -n '1p' "$LOCK/pid" 2>/dev/null || true)
+  sstart=$(sed -n '2p' "$LOCK/pid" 2>/dev/null || true)
+  if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+    nstart=$(proc_start "$pid")
+    if [ -z "$sstart" ] || [ -z "$nstart" ] || [ "$sstart" = "$nstart" ]; then
+      return 1   # genuine live owner
+    fi
+    log "lock held by reused PID $pid (start mismatch); reclaiming"
+  fi
   if [ -L "$LOCK/pid" ]; then log "ABORT lock/pid is symlink"; return 2; fi
   rm -f "$LOCK/pid" 2>/dev/null || true; rmdir "$LOCK" 2>/dev/null || true
   if [ -L "$LOCK" ]; then log "ABORT lock is symlink: $LOCK"; return 2; fi
-  if mkdir "$LOCK" 2>/dev/null; then printf '%s' "$$" > "$LOCK/pid"; return 0; fi
+  if mkdir "$LOCK" 2>/dev/null; then write_lock_owner; return 0; fi
   return 1
 }
 release_lock(){
   [ -L "$LOCK" ] && return 0
   [ -L "$LOCK/pid" ] && return 0
-  local pid=""; [ -f "$LOCK/pid" ] && pid=$(cat "$LOCK/pid" 2>/dev/null || true)
+  local pid; pid=$(sed -n '1p' "$LOCK/pid" 2>/dev/null || true)
   [ "$pid" = "$$" ] && { rm -f "$LOCK/pid" 2>/dev/null || true; rmdir "$LOCK" 2>/dev/null || true; }
 }
 
-# ---- the ONLY mover (root = trusted ancestor for symlink-safe mkdir) ----
 safe_move(){
   local src="$1" destdir="$2" root="$3" base target sdev ddev
   base=$(basename "$src")
@@ -97,8 +105,6 @@ bucket(){
   esac
 }
 
-# Probe roots (and existing archive ancestors) up front; abort WHOLE run on any
-# permission/symlink/enumeration problem. Never treat a denial as "empty".
 preflight(){
   local d
   for d in "$HOME/Desktop" "$HOME/Downloads" "$HOME/Developer"; do
@@ -118,19 +124,45 @@ preflight(){
   return 0
 }
 
+# Look up a path's previously recorded identity in a TSV state file (tab-delimited
+# "PATH<TAB>IDENT"). Handles spaces in paths. Prints ident or empty.
+state_lookup(){
+  local sf="$1" p="$2" ipath iident
+  [ -f "$sf" ] || return 0
+  while IFS=$'\t' read -r ipath iident; do
+    [ "$ipath" = "$p" ] && { printf '%s' "$iident"; return 0; }
+  done < "$sf"
+  return 0
+}
+
+# Two-run stability: a Desktop/Downloads file is moved only once its identity
+# (dev:inode:size:mtime) has been observed UNCHANGED across two separate runs.
+# First sighting (or any change) is recorded, never moved.
 sort_dir(){
-  local SRC="$1" now f b mt d
+  local SRC="$1" tag="$2" now f b ident mt prev d STATE NEW
   [ -d "$SRC" ] || return 0
+  STATE="$CLEAN/seen_${tag}.tsv"
+  if [ -L "$STATE" ]; then log "ABORT state is symlink: $STATE"; return 1; fi
+  NEW=$(mktemp "$CLEAN/.seen.XXXXXX") || { log "FAIL mktemp state"; return 1; }
+  if [ ! -f "$NEW" ] || [ -L "$NEW" ]; then log "FAIL insecure state temp"; rm -f "$NEW"; return 1; fi
   now=$(now_epoch); shopt -s nullglob
   for f in "$SRC"/*; do
     [ -d "$f" ] && continue
     [ -L "$f" ] && { log "SKIP symlink: $f"; continue; }
     b=$(basename "$f"); case "$b" in .*) continue ;; esac
     case "$b" in *.crdownload|*.part|*.download|*.partial|*.tmp|*.opdownload) log "SKIP in-progress: $f"; continue ;; esac
-    if ! mt=$(file_mtime "$f"); then log "FAIL stat (skip): $f"; continue; fi
-    [ $(( now - mt )) -lt "$SETTLE" ] && { log "SKIP settling: $f"; continue; }
-    d=$(bucket "$b"); safe_move "$f" "$SRC/$d" "$SRC" || true
+    if ! ident=$(file_ident "$f"); then log "FAIL stat (skip): $f"; continue; fi
+    mt=${ident##*:}
+    if [ $(( now - mt )) -lt "$SETTLE" ]; then printf '%s\t%s\n' "$f" "$ident" >> "$NEW"; log "SKIP settling: $f"; continue; fi
+    prev=$(state_lookup "$STATE" "$f")
+    if [ -z "$prev" ]; then printf '%s\t%s\n' "$f" "$ident" >> "$NEW"; log "OBSERVE new (not moving yet): $f"; continue; fi
+    if [ "$prev" != "$ident" ]; then printf '%s\t%s\n' "$f" "$ident" >> "$NEW"; log "OBSERVE changed (reset): $f"; continue; fi
+    d=$(bucket "$b")
+    if ! safe_move "$f" "$SRC/$d" "$SRC"; then printf '%s\t%s\n' "$f" "$ident" >> "$NEW"; fi
   done
+  if [ -L "$STATE" ]; then log "ABORT state is symlink: $STATE"; rm -f "$NEW"; return 1; fi
+  if [ -e "$STATE" ] && [ ! -f "$STATE" ]; then log "ABORT state not regular: $STATE"; rm -f "$NEW"; return 1; fi
+  mv -f "$NEW" "$STATE" || { log "FAIL state update: $STATE"; rm -f "$NEW"; return 1; }
 }
 
 archive_old(){
@@ -174,7 +206,8 @@ report_backups(){
   done
   [ "$newest" -gt 0 ] && [ $(( $(now_epoch) - newest )) -lt 43200 ] && return 0
   local entries=( "$BK"/* )
-  TMP="$CLEAN/.backups_report.partial.$$"; rm -f "$TMP" 2>/dev/null || true
+  TMP=$(mktemp "$CLEAN/.backups_report.partial.XXXXXX") || { log "FAIL report mktemp"; return 1; }
+  if [ ! -f "$TMP" ] || [ -L "$TMP" ]; then log "FAIL insecure report temp"; rm -f "$TMP"; return 1; fi
   {
     printf '=== _backups size report (%s) ===\n' "$(date '+%Y-%m-%d %H:%M')" &&
     printf 'Total:\n' && du -sh "$BK" && printf 'Largest entries (MB):\n'
@@ -193,9 +226,7 @@ report_backups(){
   log "REPORT wrote $REP"; return 0
 }
 
-# Test hook: HK_NO_RUN=1 sources the file (functions only) without running.
 if [ "${HK_NO_RUN:-}" != "1" ]; then
-  # Call in a condition so a non-zero return does not trip `set -e`.
   if acquire_lock; then
     :
   else
@@ -206,10 +237,10 @@ if [ "${HK_NO_RUN:-}" != "1" ]; then
   trap release_lock EXIT
   log "=== run start ==="
   if ! preflight; then log "=== aborted: preflight failed ==="; exit 1; fi
-  sort_dir "$HOME/Desktop"   || true
-  sort_dir "$HOME/Downloads" || true
-  archive_old                || true
-  clean_developer            || true
-  report_backups             || log "report step failed (see launchd.err)"
+  sort_dir "$HOME/Desktop"   desktop   || true
+  sort_dir "$HOME/Downloads" downloads || true
+  archive_old                          || true
+  clean_developer                      || true
+  report_backups                       || log "report step failed (see launchd.err)"
   log "=== run end ==="
 fi
