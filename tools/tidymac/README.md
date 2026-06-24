@@ -1,7 +1,8 @@
-# Desktop / Downloads / Developer Housekeeper
+# TidyMac — Desktop / Downloads / Developer cleanup
 
-A self-running macOS cleanup agent that keeps `~/Desktop`, `~/Downloads`, and
-scratch in `~/Developer` tidy automatically. It **never deletes user content,
+A macOS cleanup tool that keeps `~/Desktop`, `~/Downloads`, and scratch in
+`~/Developer` tidy. Run it on demand (e.g. from a "TidyMac" Shortcut / dashboard
+button) or install it as a daily LaunchAgent. It **never deletes user content,
 never overwrites, and never loses a file.** (It removes only its own
 agent-owned lock directory and incomplete-report temp files.)
 
@@ -21,9 +22,9 @@ Runs daily at noon and at login (via a `launchd` LaunchAgent), and:
   with `_cc_done_` — into `~/Developer/_archive_scratch/YYYY-MM/`. Real projects
   and un-marked `_cc_*` work are never touched.
 - **Reports** the size of `~/Developer/_backups` (read-only) to
-  `~/.cleanup/backups_report_<timestamp>.txt`.
+  `~/.tidymac/backups_report_<timestamp>.txt`.
 
-Every action is logged to `~/.cleanup/housekeeper.log`. **No user content is
+Every action is logged to `~/.tidymac/tidymac.log`. **No user content is
 ever deleted** — old files move to an `_Archive` you empty yourself.
 
 ## Install
@@ -39,7 +40,7 @@ rendered plist):
 Only if that passes:
 
 ```sh
-open install-auto-cleanup.command   # or double-click it
+open install-tidymac.command   # or double-click it
 ```
 
 macOS will likely prompt to grant the agent access to Desktop/Downloads
@@ -60,10 +61,10 @@ On the next run, anything matching `_cc_done_*` is moved into
 ## Manage
 
 ```sh
-launchctl unload ~/Library/LaunchAgents/com.ciamac.housekeeper.plist   # pause
-launchctl load   ~/Library/LaunchAgents/com.ciamac.housekeeper.plist   # resume
-cat ~/.cleanup/housekeeper.log                                         # what it did
-cat ~/.cleanup/backups_report_*.txt                                    # _backups sizes
+launchctl unload ~/Library/LaunchAgents/com.ciamac.tidymac.plist   # pause
+launchctl load   ~/Library/LaunchAgents/com.ciamac.tidymac.plist   # resume
+cat ~/.tidymac/tidymac.log                                         # what it did
+cat ~/.tidymac/backups_report_*.txt                                    # _backups sizes
 ```
 
 ## Safety model
@@ -104,7 +105,7 @@ Additional protections:
   so a destination appearing mid-window can't be mistaken for success. It creates
   `$HOME/Library` and `$HOME/Library/LaunchAgents` **component-by-component**,
   rejecting a symlink at any level. It then runs once and reports a failed first
-  run honestly (no false "Done"). `chmod 700` on `~/.cleanup` fails closed. (If
+  run honestly (no false "Done"). `chmod 700` on `~/.tidymac` fails closed. (If
   the plist races in after the engine is written, the installer rolls back *its
   own* just-written engine — verified by inode — never user content.)
 - **Time-based stability** for Desktop/Downloads: the engine records each loose
@@ -119,7 +120,7 @@ Additional protections:
   download suffixes (`.crdownload`, `.part`, `.download`, `.partial`, `.tmp`,
   `.opdownload`), are skipped so partial downloads are never moved.
 - **Hidden files** (dotfiles like `.env`) are left alone.
-- `~/.cleanup` is symlink-rejected and `chmod 700`.
+- `~/.tidymac` is symlink-rejected and `chmod 700`.
 - **No `find`**; portable `stat`/`du`/`sort` usage compatible with macOS
   `/bin/bash` 3.2 and BSD coreutils.
 - The `_backups` report is built in a non-matching `.partial.$$` temp file and
@@ -138,10 +139,10 @@ PID-reuse hardening. Round 5: 3 blockers (seconds-fast stability under RunAtLoad
 verification; symlinked `~/Library` → component-by-component creation) plus a
 whitespace-safe state format. Round 6: 1 blocker (safe_move/report mv now verify
 the destination is the same device:inode as the source) plus SHA-256 state keys —
-all addressed here. The portable suite (`tests-v9.sh`) runs every fixture under a
+all addressed here. The portable suite (`tidymac-tests.sh`) runs every fixture under a
 validated `mktemp -d` root (19 assertions).
 
 **Still required before trusting the daily schedule:** run on a real Mac and
-confirm `/bin/bash --version` (3.2), `bash -n housekeeper.sh`, `plutil -lint`
-the generated plist, and `ENG="$PWD/housekeeper.sh" bash tests-v9.sh` all pass
-under BSD tools. Then do one manual run and review `~/.cleanup/housekeeper.log`.
+confirm `/bin/bash --version` (3.2), `bash -n tidymac.sh`, `plutil -lint`
+the generated plist, and `ENG="$PWD/tidymac.sh" bash tidymac-tests.sh` all pass
+under BSD tools. Then do one manual run and review `~/.tidymac/tidymac.log`.

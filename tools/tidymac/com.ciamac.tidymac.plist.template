@@ -10,7 +10,7 @@
   <key>StartCalendarInterval</key>
   <dict><key>Hour</key><integer>12</integer><key>Minute</key><integer>0</integer></dict>
   <key>RunAtLoad</key><true/>
-  <key>StandardErrorPath</key><string>$HOME/.cleanup/launchd.err</string>
-  <key>StandardOutPath</key><string>$HOME/.cleanup/launchd.out</string>
+  <key>StandardErrorPath</key><string>$HOME/.tidymac/launchd.err</string>
+  <key>StandardOutPath</key><string>$HOME/.tidymac/launchd.out</string>
 </dict>
 </plist>

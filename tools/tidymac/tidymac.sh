@@ -1,11 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-CLEAN="$HOME/.cleanup"
+CLEAN="$HOME/.tidymac"
 if [ -L "$CLEAN" ]; then printf 'refusing: %s is a symlink\n' "$CLEAN" >&2; exit 1; fi
 mkdir -p "$CLEAN"
 if ! chmod 700 "$CLEAN"; then printf 'cannot secure %s\n' "$CLEAN" >&2; exit 1; fi
-LOG="$CLEAN/housekeeper.log"
+LOG="$CLEAN/tidymac.log"
 log(){ printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$LOG"; }
 
 file_mtime(){ local m; if m=$(stat -f %m "$1" 2>/dev/null); then printf '%s' "$m"; return 0; fi; if m=$(stat -c %Y "$1" 2>/dev/null); then printf '%s' "$m"; return 0; fi; return 1; }

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==========================================================================
-#  Housekeeper installer (v9, post sixth audit). Double-click ONCE.
+#  TidyMac installer (v9, post sixth audit). Double-click ONCE.
 #  safe_move and the report write now verify the destination is the SAME
 #  device:inode as the source after mv -n (source gone incl. symlink, dest a
 #  non-symlink); state keys are SHA-256 of the path.
@@ -16,15 +16,15 @@
 #  for at least 12 hours (time-based two-run stability).
 # ==========================================================================
 set -euo pipefail
-CLEAN_DIR="$HOME/.cleanup"
-ENGINE="$CLEAN_DIR/housekeeper.sh"
-PLIST="$HOME/Library/LaunchAgents/com.ciamac.housekeeper.plist"
-LABEL="com.ciamac.housekeeper"
+CLEAN_DIR="$HOME/.tidymac"
+ENGINE="$CLEAN_DIR/tidymac.sh"
+PLIST="$HOME/Library/LaunchAgents/com.ciamac.tidymac.plist"
+LABEL="com.ciamac.tidymac"
 
 devino(){ local s; if s=$(stat -f '%d:%i' "$1" 2>/dev/null); then printf '%s' "$s"; return 0; fi; if s=$(stat -c '%d:%i' "$1" 2>/dev/null); then printf '%s' "$s"; return 0; fi; return 1; }
 verify_installed(){ local want="$1" dest="$2" got; [ -e "$dest" ] && [ ! -L "$dest" ] && [ -f "$dest" ] || return 1; got=$(devino "$dest") || return 1; [ "$got" = "$want" ]; }
 
-echo "Installing Housekeeper..."
+echo "Installing TidyMac..."
 for p in "$ENGINE" "$PLIST"; do
   if [ -e "$p" ] || [ -L "$p" ]; then
     echo "refusing: path already exists: $p" >&2
@@ -58,11 +58,11 @@ cat > "$TMP_ENGINE" <<'ENGINE_EOF'
 #!/bin/bash
 set -euo pipefail
 
-CLEAN="$HOME/.cleanup"
+CLEAN="$HOME/.tidymac"
 if [ -L "$CLEAN" ]; then printf 'refusing: %s is a symlink\n' "$CLEAN" >&2; exit 1; fi
 mkdir -p "$CLEAN"
 if ! chmod 700 "$CLEAN"; then printf 'cannot secure %s\n' "$CLEAN" >&2; exit 1; fi
-LOG="$CLEAN/housekeeper.log"
+LOG="$CLEAN/tidymac.log"
 log(){ printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$LOG"; }
 
 file_mtime(){ local m; if m=$(stat -f %m "$1" 2>/dev/null); then printf '%s' "$m"; return 0; fi; if m=$(stat -c %Y "$1" 2>/dev/null); then printf '%s' "$m"; return 0; fi; return 1; }
@@ -321,8 +321,8 @@ cat > "$TMP_PLIST" <<PLIST_EOF
   <key>StartCalendarInterval</key>
   <dict><key>Hour</key><integer>12</integer><key>Minute</key><integer>0</integer></dict>
   <key>RunAtLoad</key><true/>
-  <key>StandardErrorPath</key><string>$HOME/.cleanup/launchd.err</string>
-  <key>StandardOutPath</key><string>$HOME/.cleanup/launchd.out</string>
+  <key>StandardErrorPath</key><string>$HOME/.tidymac/launchd.err</string>
+  <key>StandardOutPath</key><string>$HOME/.tidymac/launchd.out</string>
 </dict>
 </plist>
 PLIST_EOF
@@ -353,7 +353,7 @@ trap - EXIT
 
 if ! /bin/bash "$ENGINE"; then
   echo "Installed files, but the first validation run FAILED." >&2
-  echo "Inspect ~/.cleanup/housekeeper.log. The agent was NOT scheduled." >&2
+  echo "Inspect ~/.tidymac/tidymac.log. The agent was NOT scheduled." >&2
   exit 1
 fi
 
@@ -364,5 +364,5 @@ if command -v launchctl >/dev/null 2>&1; then
 else
   echo "(not macOS - skipping launchctl load.)"
 fi
-echo "Done. Desktop/Downloads files move only after 12h of stable identity. Log: ~/.cleanup/housekeeper.log"
+echo "Done. Desktop/Downloads files move only after 12h of stable identity. Log: ~/.tidymac/tidymac.log"
 echo "Press any key to close."; read -n 1 -s 2>/dev/null || true
