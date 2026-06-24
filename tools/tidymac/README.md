@@ -27,24 +27,36 @@ Runs daily at noon and at login (via a `launchd` LaunchAgent), and:
 Every action is logged to `~/.tidymac/tidymac.log`. **No user content is
 ever deleted** — old files move to an `_Archive` you empty yourself.
 
-## Install
+## Use it (manual button — recommended)
 
-**First, on the Mac, run the pre-install gate from this folder** (it installs
-nothing — it runs the syntax check, the 19-assertion safety suite, and lints the
-rendered plist):
-
-```sh
-/bin/bash run-macos-tests.sh     # expect: SUMMARY: 19 passed, 0 failed
-```
-
-Only if that passes:
+This is the default: a "TidyMac" Shortcut you trigger yourself (e.g. from a
+dashboard launcher). **No LaunchAgent, no schedule** — it only runs when you click.
 
 ```sh
-open install-tidymac.command   # or double-click it
+# 1. Check the engine on your Mac (installs nothing, loads nothing):
+/bin/bash run-macos-tests.sh        # expect: SUMMARY: 16 passed, 0 failed
+
+# 2. Place the engine:
+mkdir -p ~/.tidymac && chmod 700 ~/.tidymac
+cp ./tidymac.sh ~/.tidymac/tidymac.sh && chmod 700 ~/.tidymac/tidymac.sh
 ```
 
-macOS will likely prompt to grant the agent access to Desktop/Downloads
-(TCC / Full Disk Access). Approve it once.
+3. **Make the Shortcut** (Shortcuts.app → ＋ → name it exactly `TidyMac` → add a
+   **Run Shell Script** action, Shell `/bin/bash`, body:
+   `/bin/bash "$HOME/.tidymac/tidymac.sh"; /usr/bin/tail -n 25 "$HOME/.tidymac/tidymac.log"`).
+4. **Dashboard button** → set the launcher URL to `shortcuts://run-shortcut?name=TidyMac`.
+
+Verify: `shortcuts run TidyMac` (or click the button) then `tail -n 5 ~/.tidymac/tidymac.log`.
+
+## Optional: scheduled install (opt-in, loads a LaunchAgent)
+
+If you'd rather it run daily/at login instead of on demand:
+
+```sh
+open install-tidymac.command   # validates, installs the engine + LaunchAgent
+```
+
+macOS will prompt to grant access to Desktop/Downloads (TCC / Full Disk Access).
 
 ## Archive Developer scratch
 
