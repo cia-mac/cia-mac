@@ -11,10 +11,11 @@ log(){ printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$LOG"; }
 file_mtime(){ local m; if m=$(stat -f %m "$1" 2>/dev/null); then printf '%s' "$m"; return 0; fi; if m=$(stat -c %Y "$1" 2>/dev/null); then printf '%s' "$m"; return 0; fi; return 1; }
 file_dev(){   local d; if d=$(stat -f %d "$1" 2>/dev/null); then printf '%s' "$d"; return 0; fi; if d=$(stat -c %d "$1" 2>/dev/null); then printf '%s' "$d"; return 0; fi; return 1; }
 file_ident(){ local s; if s=$(stat -f '%d:%i:%z:%m' "$1" 2>/dev/null); then printf '%s' "$s"; return 0; fi; if s=$(stat -c '%d:%i:%s:%Y' "$1" 2>/dev/null); then printf '%s' "$s"; return 0; fi; return 1; }
+file_devino(){ local s; if s=$(stat -f '%d:%i' "$1" 2>/dev/null); then printf '%s' "$s"; return 0; fi; if s=$(stat -c '%d:%i' "$1" 2>/dev/null); then printf '%s' "$s"; return 0; fi; return 1; }
 proc_start(){ ps -o lstart= -p "$1" 2>/dev/null | tr -s ' ' | sed 's/^ *//;s/ *$//'; }
-# whitespace/newline-safe key for a path (CRC + length); collisions only ever
-# cause a file to keep re-observing (never a wrong move).
-path_key(){ printf '%s' "$1" | cksum | tr -d '\n' | tr ' ' '_'; }
+_sha256(){ if command -v shasum >/dev/null 2>&1; then shasum -a 256; elif command -v sha256sum >/dev/null 2>&1; then sha256sum; else cksum; fi; }
+# collision-resistant, whitespace/newline-safe key for a path (SHA-256 hex)
+path_key(){ printf '%s' "$1" | _sha256 | awk '{print $1}'; }
 now_epoch(){ date +%s; }
 SETTLE=120           # mtime floor (seconds) before a file is even considered
 STABLE_SECS=43200    # identity must hold this long (12h) before moving
@@ -76,10 +77,11 @@ release_lock(){
 }
 
 safe_move(){
-  local src="$1" destdir="$2" root="$3" base target sdev ddev
+  local src="$1" destdir="$2" root="$3" base target sdev ddev sdi tdi
   base=$(basename "$src")
   if [ -L "$src" ];  then log "SKIP symlink source: $src"; return 1; fi
   if [ ! -e "$src" ]; then log "SKIP vanished: $src"; return 1; fi
+  if ! sdi=$(file_devino "$src"); then log "FAIL stat devino src: $src"; return 1; fi
   if [ -e "$destdir" ] && [ ! -d "$destdir" ]; then log "ABORT dest not a dir: $destdir"; return 1; fi
   if ! ensure_dir_no_symlink "$root" "$destdir"; then log "ABORT unsafe destdir: $destdir"; return 1; fi
   if ! sdev=$(file_dev "$src");     then log "FAIL stat dev: $src"; return 1; fi
@@ -88,7 +90,13 @@ safe_move(){
   target="$destdir/$base"
   if [ -e "$target" ] || [ -L "$target" ]; then log "SKIP collision: $target"; return 1; fi
   if ! mv -n "$src" "$target"; then log "FAIL mv: $src -> $target"; return 1; fi
-  if [ -e "$src" ] || [ ! -e "$target" ]; then log "FAIL verify: $src -> $target"; return 1; fi
+  # post-move verification (works for files and _cc_done_* directories):
+  # source fully gone (incl. symlink), dest present and not a symlink, and dest
+  # is the SAME device:inode captured from the source before the move.
+  if [ -e "$src" ] || [ -L "$src" ]; then log "FAIL src still present: $src"; return 1; fi
+  if [ ! -e "$target" ] || [ -L "$target" ]; then log "FAIL dest missing/symlink: $target"; return 1; fi
+  if ! tdi=$(file_devino "$target"); then log "FAIL stat devino dest: $target"; return 1; fi
+  if [ "$tdi" != "$sdi" ]; then log "FAIL inode mismatch: $src ($sdi) -> $target ($tdi)"; return 1; fi
   log "MOVED $src -> $target"; return 0
 }
 
@@ -215,7 +223,13 @@ report_backups(){
   fi
   REP="$CLEAN/backups_report_$(date '+%Y%m%d_%H%M%S').txt"
   if [ -e "$REP" ] || [ -L "$REP" ]; then log "ABORT report exists: $REP"; rm -f "$TMP"; return 1; fi
+  local rdi ndi
+  if ! rdi=$(file_devino "$TMP"); then log "FAIL devino report tmp"; rm -f "$TMP"; return 1; fi
   if ! mv -n "$TMP" "$REP"; then log "FAIL report rename"; rm -f "$TMP"; return 1; fi
+  if [ -e "$TMP" ] || [ -L "$TMP" ]; then log "FAIL report tmp still present"; return 1; fi
+  if [ ! -e "$REP" ] || [ -L "$REP" ]; then log "FAIL report dest missing/symlink"; return 1; fi
+  if ! ndi=$(file_devino "$REP"); then log "FAIL devino report dest"; return 1; fi
+  if [ "$ndi" != "$rdi" ]; then log "FAIL report inode mismatch"; return 1; fi
   log "REPORT wrote $REP"; return 0
 }
 

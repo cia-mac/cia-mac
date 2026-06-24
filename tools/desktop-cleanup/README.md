@@ -70,8 +70,13 @@ afterward:
   one component at a time from a trusted root (`ensure_dir_no_symlink`), so an
   intermediate symlink such as `Downloads/_Archive -> /elsewhere` is refused,
   not traversed
-- verifies the source is gone **and** the destination exists before logging
-  success; logs `FAIL` otherwise
+- verifies after `mv -n` that the **source is gone (including symlink), the
+  destination is a non-symlink, and the destination's `device:inode` equals the
+  source's captured `device:inode`** before logging success; logs `FAIL`
+  otherwise. This closes the gap where a destination appearing between the
+  collision check and the move could be mistaken for success. The same inode
+  verification is applied to the `_backups` report write. Works for both regular
+  files and `_cc_done_*` directories.
 
 Additional protections:
 
@@ -95,7 +100,7 @@ Additional protections:
   own* just-written engine — verified by inode — never user content.)
 - **Time-based stability** for Desktop/Downloads: the engine records each loose
   file's `dev:inode:size:mtime` plus a `first_seen` timestamp in an agent-owned
-  state file (whitespace-safe, keyed by a `cksum` of the path) and only moves the
+  state file (whitespace-safe, keyed by a SHA-256 of the path) and only moves the
   file once that identity has held for ≥12 hours. The report partial file is also
   created with `mktemp`.
 - **Lock** stores the owner PID *and* its process start time, so a reused PID
@@ -114,7 +119,7 @@ Additional protections:
 
 ## Review status
 
-Independently audited five times (external review). Round 1: 8 issues.
+Independently audited six times (external review). Round 1: 8 issues.
 Round 2: 4 blockers + hardening. Round 3: 6 blockers (installer overwrite,
 intermediate-symlink traversal, symlinked-lock deletion, unsafe test cleanup,
 hidden install failure, install-before-validate) + hardening. Round 4: 2 blockers
@@ -122,10 +127,12 @@ hidden install failure, install-before-validate) + hardening. Round 4: 2 blocker
 PID-reuse hardening. Round 5: 3 blockers (seconds-fast stability under RunAtLoad
 → 12h time-based stability; unverified installer `mv -n` → device:inode
 verification; symlinked `~/Library` → component-by-component creation) plus a
-whitespace-safe state format — all addressed here. The portable suite
-(`tests-v8.sh`) runs every fixture under a validated `mktemp -d` root (18 assertions).
+whitespace-safe state format. Round 6: 1 blocker (safe_move/report mv now verify
+the destination is the same device:inode as the source) plus SHA-256 state keys —
+all addressed here. The portable suite (`tests-v9.sh`) runs every fixture under a
+validated `mktemp -d` root (19 assertions).
 
 **Still required before trusting the daily schedule:** run on a real Mac and
 confirm `/bin/bash --version` (3.2), `bash -n housekeeper.sh`, `plutil -lint`
-the generated plist, and `ENG="$PWD/housekeeper.sh" bash tests-v8.sh` all pass
+the generated plist, and `ENG="$PWD/housekeeper.sh" bash tests-v9.sh` all pass
 under BSD tools. Then do one manual run and review `~/.cleanup/housekeeper.log`.

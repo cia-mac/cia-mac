@@ -32,5 +32,7 @@
   PASS: installer rejects symlinked Library
 ### 16. INSTALLER happy path: installs, verifies inode, first run ok ###
   PASS: installer happy path
+### 17. POST-MOVE INODE VERIFY: moved file keeps its dev:inode; dir _cc_done_ too ###
+  PASS: inode preserved+verified (file & dir)
 
-SUMMARY: 18 passed, 0 failed
+SUMMARY: 19 passed, 0 failed

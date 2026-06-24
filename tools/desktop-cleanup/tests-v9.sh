@@ -1,5 +1,5 @@
 #!/bin/bash
-# Reproducible v8 safety tests. Portable to macOS (BSD) and Linux (GNU).
+# Reproducible v9 safety tests. Portable to macOS (BSD) and Linux (GNU).
 # All fixtures under a validated mktemp -d root; no relative rm.
 set -u
 ENG="${ENG:?set ENG=/abs/path/to/housekeeper.sh}"; case "$ENG" in /*) ;; *) ENG="$PWD/$ENG" ;; esac
@@ -111,6 +111,16 @@ if [ -n "$INSTALLER" ]; then
   out=$(HOME="$h" bash "$INSTALLER" </dev/null 2>&1); rc=$?
   { [ "$rc" -eq 0 ] && [ -f "$h/.cleanup/housekeeper.sh" ] && [ ! -L "$h/.cleanup/housekeeper.sh" ] && [ -f "$h/Library/LaunchAgents/com.ciamac.housekeeper.plist" ]; } && ok "installer happy path" || no "installer happy ($rc)"
 else echo "  SKIP"; fi
+
+echo "### 17. POST-MOVE INODE VERIFY: moved file keeps its dev:inode; dir _cc_done_ too ###"
+h=$(H Z); mkdir -p "$h/.cleanup" "$h/Desktop" "$h/Developer/_cc_done_d"; : > "$h/Developer/_cc_done_d/inner"
+: > "$h/Desktop/z.png"; set_old "$h/Desktop/z.png"
+ino_before=$(stat -c %i "$h/Desktop/z.png" 2>/dev/null || stat -f %i "$h/Desktop/z.png")
+dino_before=$(stat -c %i "$h/Developer/_cc_done_d" 2>/dev/null || stat -f %i "$h/Developer/_cc_done_d")
+R "$h"; backdate "$h/.cleanup/seen_desktop.state" 46800; R "$h"
+ino_after=$(stat -c %i "$h/Desktop/Images/z.png" 2>/dev/null || stat -f %i "$h/Desktop/Images/z.png" 2>/dev/null)
+dino_after=$(stat -c %i "$h/Developer/_archive_scratch"/*/_cc_done_d 2>/dev/null || stat -f %i "$h/Developer/_archive_scratch"/*/_cc_done_d 2>/dev/null)
+{ [ -n "$ino_after" ] && [ "$ino_before" = "$ino_after" ] && [ -n "$dino_after" ] && [ "$dino_before" = "$dino_after" ] && grep -q "MOVED .*z.png" "$h/.cleanup/housekeeper.log"; } && ok "inode preserved+verified (file & dir)" || no "inode verify (f:$ino_before/$ino_after d:$dino_before/$dino_after)"
 
 echo
 echo "SUMMARY: $pass passed, $fail failed"
