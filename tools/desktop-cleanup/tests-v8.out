@@ -1,0 +1,36 @@
+### 1. TIME STABILITY: run1=no, immediate run2=no (B1), after 13h=yes (B2) ###
+  PASS: time-based stability (run1=no run2=no aged=yes)
+### 2. CHANGED before stable: identity reset, not moved ###
+  PASS: changed-before-stable not moved
+### 3. FRESH + in-progress suffix never moved ###
+  PASS: fresh + .part never moved
+### 4. COLLISION preserves both copies ###
+  PASS: collision safe
+### 5. HIDDEN left alone; visible moves after stability ###
+  PASS: dotfiles
+### 6. _cc_done_* only (single run) ###
+  PASS: developer marker
+### 7. ARCHIVE >30d; intermediate _Archive SYMLINK refused ###
+  PASS: intermediate symlink refused
+### 8. LOCK symlink rejected; target NOT deleted ###
+  PASS: lock symlink rejected
+### 9. PREFLIGHT symlinked root aborts whole run ###
+  PASS: preflight whole-run abort
+### 10. CROSS-FS refused (if distinct fs) ###
+  PASS: cross-fs refused
+### 11. REPORT atomic on du failure ###
+  PASS: report atomic
+### 12. PID lock dead reclaimed / live respected / reuse reclaimed ###
+  PASS: dead reclaimed
+  PASS: live respected
+  PASS: pid-reuse reclaimed
+### 13. STATE is whitespace-safe (path with spaces) ###
+  PASS: path with spaces handled
+### 14. INSTALLER refuses overwrite ###
+  PASS: installer refuses overwrite
+### 15. INSTALLER rejects symlinked $HOME/Library (B3) ###
+  PASS: installer rejects symlinked Library
+### 16. INSTALLER happy path: installs, verifies inode, first run ok ###
+  PASS: installer happy path
+
+SUMMARY: 18 passed, 0 failed

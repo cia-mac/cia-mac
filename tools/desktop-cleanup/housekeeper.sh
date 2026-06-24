@@ -10,11 +10,14 @@ log(){ printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$LOG"; }
 
 file_mtime(){ local m; if m=$(stat -f %m "$1" 2>/dev/null); then printf '%s' "$m"; return 0; fi; if m=$(stat -c %Y "$1" 2>/dev/null); then printf '%s' "$m"; return 0; fi; return 1; }
 file_dev(){   local d; if d=$(stat -f %d "$1" 2>/dev/null); then printf '%s' "$d"; return 0; fi; if d=$(stat -c %d "$1" 2>/dev/null); then printf '%s' "$d"; return 0; fi; return 1; }
-# dev:inode:size:mtime identity (BSD then GNU)
 file_ident(){ local s; if s=$(stat -f '%d:%i:%z:%m' "$1" 2>/dev/null); then printf '%s' "$s"; return 0; fi; if s=$(stat -c '%d:%i:%s:%Y' "$1" 2>/dev/null); then printf '%s' "$s"; return 0; fi; return 1; }
 proc_start(){ ps -o lstart= -p "$1" 2>/dev/null | tr -s ' ' | sed 's/^ *//;s/ *$//'; }
+# whitespace/newline-safe key for a path (CRC + length); collisions only ever
+# cause a file to keep re-observing (never a wrong move).
+path_key(){ printf '%s' "$1" | cksum | tr -d '\n' | tr ' ' '_'; }
 now_epoch(){ date +%s; }
-SETTLE=120
+SETTLE=120           # mtime floor (seconds) before a file is even considered
+STABLE_SECS=43200    # identity must hold this long (12h) before moving
 
 ensure_dir_no_symlink(){
   local root="$1" dir="$2" rel cur comp rc=0
@@ -43,10 +46,9 @@ ensure_dir_no_symlink(){
   return $rc
 }
 
-# ---- single-instance lock: PID + process-start, symlink-rejecting ----
 LOCK="$CLEAN/.lock"
 write_lock_owner(){ { printf '%s\n' "$$"; proc_start "$$"; } > "$LOCK/pid"; }
-acquire_lock(){           # 0=acquired, 1=another instance, 2=hard error
+acquire_lock(){
   if [ -L "$LOCK" ]; then log "ABORT lock is symlink: $LOCK"; return 2; fi
   if [ -e "$LOCK" ] && [ ! -d "$LOCK" ]; then log "ABORT lock not a dir: $LOCK"; return 2; fi
   if mkdir "$LOCK" 2>/dev/null; then write_lock_owner; return 0; fi
@@ -57,9 +59,7 @@ acquire_lock(){           # 0=acquired, 1=another instance, 2=hard error
   sstart=$(sed -n '2p' "$LOCK/pid" 2>/dev/null || true)
   if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
     nstart=$(proc_start "$pid")
-    if [ -z "$sstart" ] || [ -z "$nstart" ] || [ "$sstart" = "$nstart" ]; then
-      return 1   # genuine live owner
-    fi
+    if [ -z "$sstart" ] || [ -z "$nstart" ] || [ "$sstart" = "$nstart" ]; then return 1; fi
     log "lock held by reused PID $pid (start mismatch); reclaiming"
   fi
   if [ -L "$LOCK/pid" ]; then log "ABORT lock/pid is symlink"; return 2; fi
@@ -124,24 +124,15 @@ preflight(){
   return 0
 }
 
-# Look up a path's previously recorded identity in a TSV state file (tab-delimited
-# "PATH<TAB>IDENT"). Handles spaces in paths. Prints ident or empty.
-state_lookup(){
-  local sf="$1" p="$2" ipath iident
-  [ -f "$sf" ] || return 0
-  while IFS=$'\t' read -r ipath iident; do
-    [ "$ipath" = "$p" ] && { printf '%s' "$iident"; return 0; }
-  done < "$sf"
-  return 0
-}
+# state line format (whitespace-safe): "KEY IDENT FIRST_SEEN"
+state_lookup(){ local sf="$1" key="$2" k id fs; [ -f "$sf" ] || return 0; while read -r k id fs; do [ "$k" = "$key" ] && { printf '%s %s' "$id" "$fs"; return 0; }; done < "$sf"; return 0; }
 
-# Two-run stability: a Desktop/Downloads file is moved only once its identity
-# (dev:inode:size:mtime) has been observed UNCHANGED across two separate runs.
-# First sighting (or any change) is recorded, never moved.
+# Time-based stability: move a file only once its dev:inode:size:mtime has been
+# observed UNCHANGED for at least STABLE_SECS. Records first_seen on first sight.
 sort_dir(){
-  local SRC="$1" tag="$2" now f b ident mt prev d STATE NEW
+  local SRC="$1" tag="$2" now f b ident mt key prev pid_ pfs d STATE NEW
   [ -d "$SRC" ] || return 0
-  STATE="$CLEAN/seen_${tag}.tsv"
+  STATE="$CLEAN/seen_${tag}.state"
   if [ -L "$STATE" ]; then log "ABORT state is symlink: $STATE"; return 1; fi
   NEW=$(mktemp "$CLEAN/.seen.XXXXXX") || { log "FAIL mktemp state"; return 1; }
   if [ ! -f "$NEW" ] || [ -L "$NEW" ]; then log "FAIL insecure state temp"; rm -f "$NEW"; return 1; fi
@@ -152,13 +143,15 @@ sort_dir(){
     b=$(basename "$f"); case "$b" in .*) continue ;; esac
     case "$b" in *.crdownload|*.part|*.download|*.partial|*.tmp|*.opdownload) log "SKIP in-progress: $f"; continue ;; esac
     if ! ident=$(file_ident "$f"); then log "FAIL stat (skip): $f"; continue; fi
-    mt=${ident##*:}
-    if [ $(( now - mt )) -lt "$SETTLE" ]; then printf '%s\t%s\n' "$f" "$ident" >> "$NEW"; log "SKIP settling: $f"; continue; fi
-    prev=$(state_lookup "$STATE" "$f")
-    if [ -z "$prev" ]; then printf '%s\t%s\n' "$f" "$ident" >> "$NEW"; log "OBSERVE new (not moving yet): $f"; continue; fi
-    if [ "$prev" != "$ident" ]; then printf '%s\t%s\n' "$f" "$ident" >> "$NEW"; log "OBSERVE changed (reset): $f"; continue; fi
+    key=$(path_key "$f"); mt=${ident##*:}
+    if [ $(( now - mt )) -lt "$SETTLE" ]; then printf '%s %s %s\n' "$key" "$ident" "$now" >> "$NEW"; log "SKIP settling: $f"; continue; fi
+    prev=$(state_lookup "$STATE" "$key")
+    if [ -z "$prev" ]; then printf '%s %s %s\n' "$key" "$ident" "$now" >> "$NEW"; log "OBSERVE new: $f"; continue; fi
+    pid_=${prev% *}; pfs=${prev##* }
+    if [ "$pid_" != "$ident" ]; then printf '%s %s %s\n' "$key" "$ident" "$now" >> "$NEW"; log "OBSERVE changed (reset): $f"; continue; fi
+    if [ $(( now - pfs )) -lt "$STABLE_SECS" ]; then printf '%s %s %s\n' "$key" "$ident" "$pfs" >> "$NEW"; log "OBSERVE stabilizing: $f"; continue; fi
     d=$(bucket "$b")
-    if ! safe_move "$f" "$SRC/$d" "$SRC"; then printf '%s\t%s\n' "$f" "$ident" >> "$NEW"; fi
+    if ! safe_move "$f" "$SRC/$d" "$SRC"; then printf '%s %s %s\n' "$key" "$ident" "$pfs" >> "$NEW"; fi
   done
   if [ -L "$STATE" ]; then log "ABORT state is symlink: $STATE"; rm -f "$NEW"; return 1; fi
   if [ -e "$STATE" ] && [ ! -f "$STATE" ]; then log "ABORT state not regular: $STATE"; rm -f "$NEW"; return 1; fi
@@ -227,9 +220,7 @@ report_backups(){
 }
 
 if [ "${HK_NO_RUN:-}" != "1" ]; then
-  if acquire_lock; then
-    :
-  else
+  if acquire_lock; then :; else
     lrc=$?
     if [ "$lrc" -eq 1 ]; then log "another instance running; exit"; exit 0; fi
     log "lock error; abort"; exit 1

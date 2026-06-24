@@ -1,22 +1,25 @@
 #!/bin/bash
 # ==========================================================================
-#  Housekeeper installer (v7, post fourth audit). Double-click ONCE.
+#  Housekeeper installer (v8, post fifth audit). Double-click ONCE.
 #  - Refuses to overwrite an existing install; never overwrites user content.
-#  - Temp artifacts created with mktemp (no predictable PID paths) and verified
-#    to be regular, non-symlink files before writing.
-#  - Validates (bash -n + plutil -lint) BEFORE installing; installs atomically;
-#    runs once with honest failure; only then schedules the agent.
-#  The agent never deletes USER CONTENT (it removes only its own lock dir and
-#  incomplete-report temp files); never overwrites; never follows symlinks
-#  (incl. intermediate path components); never moves across filesystems; and
-#  moves a Desktop/Downloads file only after it has been observed unchanged
-#  across two separate runs (two-run stability).
+#  - Temp artifacts via mktemp; both installs verified by device:inode (the
+#    moved temp is gone and the destination is the same regular non-symlink
+#    inode). Rollback removes only the engine we ourselves installed.
+#  - $HOME/Library and $HOME/Library/LaunchAgents validated component-by-
+#    component (no symlink following).
+#  The agent never deletes USER CONTENT; never overwrites; never follows
+#  symlinks (incl. intermediate components); never crosses filesystems; and
+#  moves a Desktop/Downloads file only after its identity has been unchanged
+#  for at least 12 hours (time-based two-run stability).
 # ==========================================================================
 set -euo pipefail
 CLEAN_DIR="$HOME/.cleanup"
 ENGINE="$CLEAN_DIR/housekeeper.sh"
 PLIST="$HOME/Library/LaunchAgents/com.ciamac.housekeeper.plist"
 LABEL="com.ciamac.housekeeper"
+
+devino(){ local s; if s=$(stat -f '%d:%i' "$1" 2>/dev/null); then printf '%s' "$s"; return 0; fi; if s=$(stat -c '%d:%i' "$1" 2>/dev/null); then printf '%s' "$s"; return 0; fi; return 1; }
+verify_installed(){ local want="$1" dest="$2" got; [ -e "$dest" ] && [ ! -L "$dest" ] && [ -f "$dest" ] || return 1; got=$(devino "$dest") || return 1; [ "$got" = "$want" ]; }
 
 echo "Installing Housekeeper..."
 for p in "$ENGINE" "$PLIST"; do
@@ -26,12 +29,21 @@ for p in "$ENGINE" "$PLIST"; do
     exit 1
   fi
 done
-if [ -L "$CLEAN_DIR" ]; then echo "refusing: $CLEAN_DIR is a symlink" >&2; exit 1; fi
-mkdir -p "$CLEAN_DIR" "$HOME/Library/LaunchAgents"
+
+# (B3) component-by-component, symlink-rejecting directory creation under $HOME
+if [ -L "$HOME" ]; then echo "refusing: \$HOME is a symlink" >&2; exit 1; fi
+ensure_component(){   # $1 = directory that must be $HOME or a real child
+  local d="$1"
+  if [ -L "$d" ]; then echo "refusing: $d is a symlink" >&2; exit 1; fi
+  if [ -e "$d" ] && [ ! -d "$d" ]; then echo "refusing: $d is not a directory" >&2; exit 1; fi
+  if [ ! -e "$d" ]; then mkdir "$d" || { echo "mkdir failed: $d" >&2; exit 1; }; fi
+  if [ -L "$d" ]; then echo "refusing: $d became a symlink" >&2; exit 1; fi
+}
+ensure_component "$CLEAN_DIR"
+ensure_component "$HOME/Library"
+ensure_component "$HOME/Library/LaunchAgents"
 if ! chmod 700 "$CLEAN_DIR"; then echo "cannot secure $CLEAN_DIR" >&2; exit 1; fi
 
-# (B1) secure temp files: mktemp creates fresh O_EXCL regular files (no symlink
-# following), with unpredictable names. Verify type before any redirect.
 TMP_ENGINE=$(mktemp "$CLEAN_DIR/.install.engine.XXXXXX") || { echo "mktemp failed" >&2; exit 1; }
 TMP_PLIST=$(mktemp "$CLEAN_DIR/.install.plist.XXXXXX")  || { echo "mktemp failed" >&2; rm -f "$TMP_ENGINE"; exit 1; }
 trap 'rm -f "$TMP_ENGINE" "$TMP_PLIST"' EXIT
@@ -52,11 +64,14 @@ log(){ printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$LOG"; }
 
 file_mtime(){ local m; if m=$(stat -f %m "$1" 2>/dev/null); then printf '%s' "$m"; return 0; fi; if m=$(stat -c %Y "$1" 2>/dev/null); then printf '%s' "$m"; return 0; fi; return 1; }
 file_dev(){   local d; if d=$(stat -f %d "$1" 2>/dev/null); then printf '%s' "$d"; return 0; fi; if d=$(stat -c %d "$1" 2>/dev/null); then printf '%s' "$d"; return 0; fi; return 1; }
-# dev:inode:size:mtime identity (BSD then GNU)
 file_ident(){ local s; if s=$(stat -f '%d:%i:%z:%m' "$1" 2>/dev/null); then printf '%s' "$s"; return 0; fi; if s=$(stat -c '%d:%i:%s:%Y' "$1" 2>/dev/null); then printf '%s' "$s"; return 0; fi; return 1; }
 proc_start(){ ps -o lstart= -p "$1" 2>/dev/null | tr -s ' ' | sed 's/^ *//;s/ *$//'; }
+# whitespace/newline-safe key for a path (CRC + length); collisions only ever
+# cause a file to keep re-observing (never a wrong move).
+path_key(){ printf '%s' "$1" | cksum | tr -d '\n' | tr ' ' '_'; }
 now_epoch(){ date +%s; }
-SETTLE=120
+SETTLE=120           # mtime floor (seconds) before a file is even considered
+STABLE_SECS=43200    # identity must hold this long (12h) before moving
 
 ensure_dir_no_symlink(){
   local root="$1" dir="$2" rel cur comp rc=0
@@ -85,10 +100,9 @@ ensure_dir_no_symlink(){
   return $rc
 }
 
-# ---- single-instance lock: PID + process-start, symlink-rejecting ----
 LOCK="$CLEAN/.lock"
 write_lock_owner(){ { printf '%s\n' "$$"; proc_start "$$"; } > "$LOCK/pid"; }
-acquire_lock(){           # 0=acquired, 1=another instance, 2=hard error
+acquire_lock(){
   if [ -L "$LOCK" ]; then log "ABORT lock is symlink: $LOCK"; return 2; fi
   if [ -e "$LOCK" ] && [ ! -d "$LOCK" ]; then log "ABORT lock not a dir: $LOCK"; return 2; fi
   if mkdir "$LOCK" 2>/dev/null; then write_lock_owner; return 0; fi
@@ -99,9 +113,7 @@ acquire_lock(){           # 0=acquired, 1=another instance, 2=hard error
   sstart=$(sed -n '2p' "$LOCK/pid" 2>/dev/null || true)
   if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
     nstart=$(proc_start "$pid")
-    if [ -z "$sstart" ] || [ -z "$nstart" ] || [ "$sstart" = "$nstart" ]; then
-      return 1   # genuine live owner
-    fi
+    if [ -z "$sstart" ] || [ -z "$nstart" ] || [ "$sstart" = "$nstart" ]; then return 1; fi
     log "lock held by reused PID $pid (start mismatch); reclaiming"
   fi
   if [ -L "$LOCK/pid" ]; then log "ABORT lock/pid is symlink"; return 2; fi
@@ -166,24 +178,15 @@ preflight(){
   return 0
 }
 
-# Look up a path's previously recorded identity in a TSV state file (tab-delimited
-# "PATH<TAB>IDENT"). Handles spaces in paths. Prints ident or empty.
-state_lookup(){
-  local sf="$1" p="$2" ipath iident
-  [ -f "$sf" ] || return 0
-  while IFS=$'\t' read -r ipath iident; do
-    [ "$ipath" = "$p" ] && { printf '%s' "$iident"; return 0; }
-  done < "$sf"
-  return 0
-}
+# state line format (whitespace-safe): "KEY IDENT FIRST_SEEN"
+state_lookup(){ local sf="$1" key="$2" k id fs; [ -f "$sf" ] || return 0; while read -r k id fs; do [ "$k" = "$key" ] && { printf '%s %s' "$id" "$fs"; return 0; }; done < "$sf"; return 0; }
 
-# Two-run stability: a Desktop/Downloads file is moved only once its identity
-# (dev:inode:size:mtime) has been observed UNCHANGED across two separate runs.
-# First sighting (or any change) is recorded, never moved.
+# Time-based stability: move a file only once its dev:inode:size:mtime has been
+# observed UNCHANGED for at least STABLE_SECS. Records first_seen on first sight.
 sort_dir(){
-  local SRC="$1" tag="$2" now f b ident mt prev d STATE NEW
+  local SRC="$1" tag="$2" now f b ident mt key prev pid_ pfs d STATE NEW
   [ -d "$SRC" ] || return 0
-  STATE="$CLEAN/seen_${tag}.tsv"
+  STATE="$CLEAN/seen_${tag}.state"
   if [ -L "$STATE" ]; then log "ABORT state is symlink: $STATE"; return 1; fi
   NEW=$(mktemp "$CLEAN/.seen.XXXXXX") || { log "FAIL mktemp state"; return 1; }
   if [ ! -f "$NEW" ] || [ -L "$NEW" ]; then log "FAIL insecure state temp"; rm -f "$NEW"; return 1; fi
@@ -194,13 +197,15 @@ sort_dir(){
     b=$(basename "$f"); case "$b" in .*) continue ;; esac
     case "$b" in *.crdownload|*.part|*.download|*.partial|*.tmp|*.opdownload) log "SKIP in-progress: $f"; continue ;; esac
     if ! ident=$(file_ident "$f"); then log "FAIL stat (skip): $f"; continue; fi
-    mt=${ident##*:}
-    if [ $(( now - mt )) -lt "$SETTLE" ]; then printf '%s\t%s\n' "$f" "$ident" >> "$NEW"; log "SKIP settling: $f"; continue; fi
-    prev=$(state_lookup "$STATE" "$f")
-    if [ -z "$prev" ]; then printf '%s\t%s\n' "$f" "$ident" >> "$NEW"; log "OBSERVE new (not moving yet): $f"; continue; fi
-    if [ "$prev" != "$ident" ]; then printf '%s\t%s\n' "$f" "$ident" >> "$NEW"; log "OBSERVE changed (reset): $f"; continue; fi
+    key=$(path_key "$f"); mt=${ident##*:}
+    if [ $(( now - mt )) -lt "$SETTLE" ]; then printf '%s %s %s\n' "$key" "$ident" "$now" >> "$NEW"; log "SKIP settling: $f"; continue; fi
+    prev=$(state_lookup "$STATE" "$key")
+    if [ -z "$prev" ]; then printf '%s %s %s\n' "$key" "$ident" "$now" >> "$NEW"; log "OBSERVE new: $f"; continue; fi
+    pid_=${prev% *}; pfs=${prev##* }
+    if [ "$pid_" != "$ident" ]; then printf '%s %s %s\n' "$key" "$ident" "$now" >> "$NEW"; log "OBSERVE changed (reset): $f"; continue; fi
+    if [ $(( now - pfs )) -lt "$STABLE_SECS" ]; then printf '%s %s %s\n' "$key" "$ident" "$pfs" >> "$NEW"; log "OBSERVE stabilizing: $f"; continue; fi
     d=$(bucket "$b")
-    if ! safe_move "$f" "$SRC/$d" "$SRC"; then printf '%s\t%s\n' "$f" "$ident" >> "$NEW"; fi
+    if ! safe_move "$f" "$SRC/$d" "$SRC"; then printf '%s %s %s\n' "$key" "$ident" "$pfs" >> "$NEW"; fi
   done
   if [ -L "$STATE" ]; then log "ABORT state is symlink: $STATE"; rm -f "$NEW"; return 1; fi
   if [ -e "$STATE" ] && [ ! -f "$STATE" ]; then log "ABORT state not regular: $STATE"; rm -f "$NEW"; return 1; fi
@@ -269,9 +274,7 @@ report_backups(){
 }
 
 if [ "${HK_NO_RUN:-}" != "1" ]; then
-  if acquire_lock; then
-    :
-  else
+  if acquire_lock; then :; else
     lrc=$?
     if [ "$lrc" -eq 1 ]; then log "another instance running; exit"; exit 0; fi
     log "lock error; abort"; exit 1
@@ -315,14 +318,20 @@ else
 fi
 chmod 700 "$TMP_ENGINE"
 
+# (B2) install with device:inode verification after each mv -n
+eng_di=$(devino "$TMP_ENGINE") || { echo "stat temp engine failed" >&2; exit 1; }
 if [ -e "$ENGINE" ] || [ -L "$ENGINE" ]; then echo "refusing: $ENGINE appeared mid-install" >&2; exit 1; fi
 mv -n "$TMP_ENGINE" "$ENGINE" || { echo "failed to install engine" >&2; exit 1; }
+if [ -e "$TMP_ENGINE" ] || ! verify_installed "$eng_di" "$ENGINE"; then echo "engine install verification failed" >&2; exit 1; fi
+
+plist_di=$(devino "$TMP_PLIST") || { echo "stat temp plist failed" >&2; exit 1; }
 if [ -e "$PLIST" ] || [ -L "$PLIST" ]; then
   echo "refusing: $PLIST appeared mid-install" >&2
-  rm -f "$ENGINE"   # installer rollback of the engine we just wrote (not user content)
+  if verify_installed "$eng_di" "$ENGINE"; then rm -f "$ENGINE"; fi   # remove only our own engine
   exit 1
 fi
 mv -n "$TMP_PLIST" "$PLIST" || { echo "failed to install plist" >&2; exit 1; }
+if [ -e "$TMP_PLIST" ] || ! verify_installed "$plist_di" "$PLIST"; then echo "plist install verification failed" >&2; exit 1; fi
 trap - EXIT
 
 if ! /bin/bash "$ENGINE"; then
@@ -338,5 +347,5 @@ if command -v launchctl >/dev/null 2>&1; then
 else
   echo "(not macOS - skipping launchctl load.)"
 fi
-echo "Done. First run succeeded (Desktop/Downloads are observed on run 1, moved once stable). Log: ~/.cleanup/housekeeper.log"
+echo "Done. Desktop/Downloads files move only after 12h of stable identity. Log: ~/.cleanup/housekeeper.log"
 echo "Press any key to close."; read -n 1 -s 2>/dev/null || true
