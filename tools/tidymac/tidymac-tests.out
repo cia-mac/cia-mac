@@ -27,12 +27,12 @@
 ### 13. STATE is whitespace-safe (path with spaces) ###
   PASS: path with spaces handled
 ### 14. INSTALLER refuses overwrite ###
-  PASS: installer refuses overwrite
+  SKIP
 ### 15. INSTALLER rejects symlinked $HOME/Library (B3) ###
-  PASS: installer rejects symlinked Library
+  SKIP
 ### 16. INSTALLER happy path: installs, verifies inode, first run ok ###
-  PASS: installer happy path
+  SKIP
 ### 17. POST-MOVE INODE VERIFY: moved file keeps its dev:inode; dir _cc_done_ too ###
   PASS: inode preserved+verified (file & dir)
 
-SUMMARY: 19 passed, 0 failed
+SUMMARY: 16 passed, 0 failed
