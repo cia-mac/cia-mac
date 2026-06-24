@@ -16,6 +16,13 @@ Runs daily at noon and at login (via a `launchd` LaunchAgent), and:
   unchanged for at least 12 hours** (time-based stability), recorded in an
   agent-owned state file. So a file still being written — even one paused
   mid-write, and even across the install's immediate second run — is never moved.
+- **Flags likely clutter** into a **`To Be Deleted/`** review folder in
+  `~/Desktop` and `~/Downloads` (created automatically). Only files classified as
+  *likely disposable* by name/type/size — **never by age** — are moved there, and
+  each move is logged with its reason. **TidyMac never empties, purges, archives,
+  or deletes anything inside `To Be Deleted/`** — it only ever moves files *in*,
+  for you to review and delete by hand. Name collisions keep both files (never
+  overwritten). See "What goes to To Be Deleted" below.
 - **Archives** `~/Downloads` files older than 30 days (installers: 7 days) into
   `~/Downloads/_Archive/YYYY-MM/`.
 - **Sweeps Developer scratch** — but *only* items you explicitly rename to start
@@ -25,7 +32,31 @@ Runs daily at noon and at login (via a `launchd` LaunchAgent), and:
   `~/.tidymac/backups_report_<timestamp>.txt`.
 
 Every action is logged to `~/.tidymac/tidymac.log`. **No user content is
-ever deleted** — old files move to an `_Archive` you empty yourself.
+ever deleted** — old files move to an `_Archive` you empty yourself, and likely
+clutter moves to `To Be Deleted/` which you empty yourself.
+
+## What goes to To Be Deleted
+
+A loose file in `~/Desktop` or `~/Downloads` is moved to that folder's
+`To Be Deleted/` **only** if it matches one of these — all based on name, type,
+or size, **never on age alone**:
+
+| Signal | Reason logged | Examples |
+|---|---|---|
+| Empty file (0 bytes) | `empty file (0 bytes)` | a 0-byte `notes.txt` |
+| Scratch/backup extension | `temp/scratch file (.ext)` | `.bak .old .dmp .swp .swo .cache` |
+| Editor backup suffix | `editor backup (~)` | `report.txt~` |
+| Known OS junk file | `OS junk file` | `Thumbs.db`, `desktop.ini` |
+| Duplicate "copy" name | `duplicate copy` | `report copy.pdf`, `notes copy 2.txt` |
+| macOS numbered duplicate | `duplicate copy (numbered)` | `photo (1).jpg`, `file (2).pdf` |
+| Placeholder name | `placeholder name (untitled)` | `Untitled.rtf`, `untitled 3` |
+
+Deliberately **not** clutter: anything judged only by age; in-progress downloads
+(`.crdownload .part .download .partial .tmp .opdownload` are left in place);
+hidden/dotfiles (left untouched); names like `Invoice (2024).pdf` (4-digit
+"(year)" is not treated as a numbered duplicate). Because `To Be Deleted/` is a
+**review** folder you empty yourself, a wrong guess is harmless — you just move
+the file back out.
 
 ## Use it (manual button — recommended)
 

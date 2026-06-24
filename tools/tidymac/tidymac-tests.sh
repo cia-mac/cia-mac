@@ -24,7 +24,7 @@ backdate(){ local sf="$1" s="$2"; [ -f "$sf" ] || return 0; awk -v s="$s" '{$3=$
 R(){ HOME="$1" bash "$ENG" >/dev/null 2>&1; }
 
 echo "### 1. TIME STABILITY: run1=no, immediate run2=no (B1), after 13h=yes (B2) ###"
-h=$(H A); mkdir -p "$h/.tidymac" "$h/Desktop"; : > "$h/Desktop/ok.png"; set_old "$h/Desktop/ok.png"
+h=$(H A); mkdir -p "$h/.tidymac" "$h/Desktop"; echo x > "$h/Desktop/ok.png"; set_old "$h/Desktop/ok.png"
 R "$h"; a1=no; [ -e "$h/Desktop/Images/ok.png" ] && a1=yes
 R "$h"; a2=no; [ -e "$h/Desktop/Images/ok.png" ] && a2=yes
 backdate "$h/.tidymac/seen_desktop.state" 46800
@@ -47,7 +47,7 @@ R "$h"; backdate "$h/.tidymac/seen_downloads.state" 46800; R "$h"
 { [ "$(cat "$h/Downloads/Documents/r.pdf")" = ORIG ] && [ -e "$h/Downloads/r.pdf" ]; } && ok "collision safe" || no "collision"
 
 echo "### 5. HIDDEN left alone; visible moves after stability ###"
-h=$(H E); mkdir -p "$h/.tidymac" "$h/Desktop"; : > "$h/Desktop/.env"; : > "$h/Desktop/v.txt"; set_old "$h/Desktop/.env" "$h/Desktop/v.txt"
+h=$(H E); mkdir -p "$h/.tidymac" "$h/Desktop"; : > "$h/Desktop/.env"; echo x > "$h/Desktop/v.txt"; set_old "$h/Desktop/.env" "$h/Desktop/v.txt"
 R "$h"; backdate "$h/.tidymac/seen_desktop.state" 46800; R "$h"
 { [ -e "$h/Desktop/.env" ] && [ -e "$h/Desktop/Documents/v.txt" ]; } && ok "dotfiles" || no "dotfiles"
 
@@ -87,7 +87,7 @@ h=$(H L2); mkdir -p "$h/.tidymac/.lock"; printf '%s\n' "$$" > "$h/.tidymac/.lock
 h=$(H L3); mkdir -p "$h/.tidymac/.lock"; printf '%s\nBOGUS\n' "$$" > "$h/.tidymac/.lock/pid"; R "$h"; { grep -q 'reused PID' "$h/.tidymac/tidymac.log" && grep -q 'run end' "$h/.tidymac/tidymac.log"; } && ok "pid-reuse reclaimed" || no "pid-reuse"
 
 echo "### 13. STATE is whitespace-safe (path with spaces) ###"
-h=$(H S); mkdir -p "$h/.tidymac" "$h/Desktop"; : > "$h/Desktop/my report.png"; set_old "$h/Desktop/my report.png"
+h=$(H S); mkdir -p "$h/.tidymac" "$h/Desktop"; echo x > "$h/Desktop/my report.png"; set_old "$h/Desktop/my report.png"
 R "$h"; backdate "$h/.tidymac/seen_desktop.state" 46800; R "$h"
 [ -e "$h/Desktop/Images/my report.png" ] && ok "path with spaces handled" || no "spaces"
 
@@ -107,20 +107,54 @@ else echo "  SKIP"; fi
 
 echo "### 16. INSTALLER happy path: installs, verifies inode, first run ok ###"
 if [ -n "$INSTALLER" ]; then
-  h=$(H M); mkdir -p "$h/Desktop"; : > "$h/Desktop/pic.png"; set_old "$h/Desktop/pic.png"
+  h=$(H M); mkdir -p "$h/Desktop"; echo x > "$h/Desktop/pic.png"; set_old "$h/Desktop/pic.png"
   out=$(HOME="$h" bash "$INSTALLER" </dev/null 2>&1); rc=$?
   { [ "$rc" -eq 0 ] && [ -f "$h/.tidymac/tidymac.sh" ] && [ ! -L "$h/.tidymac/tidymac.sh" ] && [ -f "$h/Library/LaunchAgents/com.ciamac.tidymac.plist" ]; } && ok "installer happy path" || no "installer happy ($rc)"
 else echo "  SKIP"; fi
 
 echo "### 17. POST-MOVE INODE VERIFY: moved file keeps its dev:inode; dir _cc_done_ too ###"
 h=$(H Z); mkdir -p "$h/.tidymac" "$h/Desktop" "$h/Developer/_cc_done_d"; : > "$h/Developer/_cc_done_d/inner"
-: > "$h/Desktop/z.png"; set_old "$h/Desktop/z.png"
+echo x > "$h/Desktop/z.png"; set_old "$h/Desktop/z.png"
 ino_before=$(stat -c %i "$h/Desktop/z.png" 2>/dev/null || stat -f %i "$h/Desktop/z.png")
 dino_before=$(stat -c %i "$h/Developer/_cc_done_d" 2>/dev/null || stat -f %i "$h/Developer/_cc_done_d")
 R "$h"; backdate "$h/.tidymac/seen_desktop.state" 46800; R "$h"
 ino_after=$(stat -c %i "$h/Desktop/Images/z.png" 2>/dev/null || stat -f %i "$h/Desktop/Images/z.png" 2>/dev/null)
 dino_after=$(stat -c %i "$h/Developer/_archive_scratch"/*/_cc_done_d 2>/dev/null || stat -f %i "$h/Developer/_archive_scratch"/*/_cc_done_d 2>/dev/null)
 { [ -n "$ino_after" ] && [ "$ino_before" = "$ino_after" ] && [ -n "$dino_after" ] && [ "$dino_before" = "$dino_after" ] && grep -q "MOVED .*z.png" "$h/.tidymac/tidymac.log"; } && ok "inode preserved+verified (file & dir)" || no "inode verify (f:$ino_before/$ino_after d:$dino_before/$dino_after)"
+
+echo "### 18. CLUTTER: empty file -> 'To Be Deleted' + reason logged ###"
+h=$(H CL1); mkdir -p "$h/.tidymac" "$h/Desktop"; : > "$h/Desktop/empty.txt"; set_old "$h/Desktop/empty.txt"
+R "$h"
+{ [ -e "$h/Desktop/To Be Deleted/empty.txt" ] && grep -q 'CLUTTER (empty' "$h/.tidymac/tidymac.log"; } && ok "empty -> To Be Deleted (+reason)" || no "clutter empty"
+
+echo "### 19. CLUTTER: .bak scratch file -> 'To Be Deleted' ###"
+h=$(H CL2); mkdir -p "$h/.tidymac" "$h/Desktop"; echo x > "$h/Desktop/draft.bak"; set_old "$h/Desktop/draft.bak"
+R "$h"
+{ [ -e "$h/Desktop/To Be Deleted/draft.bak" ] && grep -q 'CLUTTER (temp/scratch' "$h/.tidymac/tidymac.log"; } && ok ".bak -> To Be Deleted" || no "clutter .bak"
+
+echo "### 20. CLUTTER: duplicate 'copy' name -> 'To Be Deleted' ###"
+h=$(H CL3); mkdir -p "$h/.tidymac" "$h/Downloads"; echo x > "$h/Downloads/report copy.pdf"; set_old "$h/Downloads/report copy.pdf"
+R "$h"
+[ -e "$h/Downloads/To Be Deleted/report copy.pdf" ] && ok "duplicate copy -> To Be Deleted" || no "clutter copy"
+
+echo "### 21. NOT clutter by age: old normal file is NOT disposable ###"
+h=$(H CL4); mkdir -p "$h/.tidymac" "$h/Desktop"; echo content > "$h/Desktop/keep.pdf"; set_days 40 "$h/Desktop/keep.pdf"
+R "$h"
+{ [ ! -e "$h/Desktop/To Be Deleted/keep.pdf" ] && [ -e "$h/Desktop/keep.pdf" ]; } && ok "old normal file not disposable" || no "age-only clutter leak"
+
+echo "### 22. 'To Be Deleted' is never emptied/purged ###"
+h=$(H CL5); mkdir -p "$h/.tidymac" "$h/Desktop/To Be Deleted"; printf 'KEEP' > "$h/Desktop/To Be Deleted/leave.txt"
+echo x > "$h/Desktop/draft.bak"; set_old "$h/Desktop/draft.bak"; R "$h"
+{ [ -e "$h/Desktop/To Be Deleted/leave.txt" ] && [ "$(cat "$h/Desktop/To Be Deleted/leave.txt")" = KEEP ]; } && ok "review folder never emptied" || no "review folder emptied"
+
+echo "### 23. COLLISION in 'To Be Deleted': keep both, never overwrite ###"
+h=$(H CL6); mkdir -p "$h/.tidymac" "$h/Desktop/To Be Deleted"; printf 'A' > "$h/Desktop/To Be Deleted/old.bak"
+printf 'B' > "$h/Desktop/old.bak"; set_old "$h/Desktop/old.bak"; R "$h"
+{ [ "$(cat "$h/Desktop/To Be Deleted/old.bak")" = A ] && [ -e "$h/Desktop/old.bak" ] && [ "$(cat "$h/Desktop/old.bak")" = B ]; } && ok "collision keeps both, no overwrite" || no "clutter collision"
+
+echo "### 24. .tmp stays in-progress-skipped (not clutter, left in place) ###"
+h=$(H CL7); mkdir -p "$h/.tidymac" "$h/Desktop"; echo x > "$h/Desktop/active.tmp"; set_old "$h/Desktop/active.tmp"; R "$h"
+{ [ -e "$h/Desktop/active.tmp" ] && [ ! -e "$h/Desktop/To Be Deleted/active.tmp" ]; } && ok ".tmp left in place" || no ".tmp handling"
 
 echo
 echo "SUMMARY: $pass passed, $fail failed"

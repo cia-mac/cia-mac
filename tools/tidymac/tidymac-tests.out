@@ -34,5 +34,19 @@
   SKIP
 ### 17. POST-MOVE INODE VERIFY: moved file keeps its dev:inode; dir _cc_done_ too ###
   PASS: inode preserved+verified (file & dir)
+### 18. CLUTTER: empty file -> 'To Be Deleted' + reason logged ###
+  PASS: empty -> To Be Deleted (+reason)
+### 19. CLUTTER: .bak scratch file -> 'To Be Deleted' ###
+  PASS: .bak -> To Be Deleted
+### 20. CLUTTER: duplicate 'copy' name -> 'To Be Deleted' ###
+  PASS: duplicate copy -> To Be Deleted
+### 21. NOT clutter by age: old normal file is NOT disposable ###
+  PASS: old normal file not disposable
+### 22. 'To Be Deleted' is never emptied/purged ###
+  PASS: review folder never emptied
+### 23. COLLISION in 'To Be Deleted': keep both, never overwrite ###
+  PASS: collision keeps both, no overwrite
+### 24. .tmp stays in-progress-skipped (not clutter, left in place) ###
+  PASS: .tmp left in place
 
-SUMMARY: 16 passed, 0 failed
+SUMMARY: 23 passed, 0 failed

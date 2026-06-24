@@ -113,6 +113,28 @@ bucket(){
   esac
 }
 
+# Decide if a loose file is likely clutter / disposable, by NAME, TYPE, or SIZE
+# (NEVER by age alone). Prints a short reason if it is clutter; nothing if not.
+clutter_reason(){
+  local b="$1" sz="$2" lower ext
+  lower=$(printf '%s' "$b" | tr '[:upper:]' '[:lower:]')
+  ext=${lower##*.}
+  if [ "${sz:-x}" = "0" ]; then printf 'empty file (0 bytes)'; return 0; fi
+  case "$ext" in
+    bak|old|dmp|swp|swo|cache) printf 'temp/scratch file (.%s)' "$ext"; return 0 ;;
+  esac
+  case "$b" in
+    *'~') printf 'editor backup (~)'; return 0 ;;
+    Thumbs.db|desktop.ini) printf 'OS junk file'; return 0 ;;
+  esac
+  case "$lower" in
+    *' copy'|*' copy.'*|*' copy '*) printf 'duplicate copy'; return 0 ;;
+    untitled|untitled.*|'untitled '*) printf 'placeholder name (untitled)'; return 0 ;;
+    *' ('[0-9]')'|*' ('[0-9]').'*|*' ('[0-9][0-9]')'|*' ('[0-9][0-9]').'*) printf 'duplicate copy (numbered)'; return 0 ;;
+  esac
+  return 0
+}
+
 preflight(){
   local d
   for d in "$HOME/Desktop" "$HOME/Downloads" "$HOME/Developer"; do
@@ -138,21 +160,32 @@ state_lookup(){ local sf="$1" key="$2" k id fs; [ -f "$sf" ] || return 0; while 
 # Time-based stability: move a file only once its dev:inode:size:mtime has been
 # observed UNCHANGED for at least STABLE_SECS. Records first_seen on first sight.
 sort_dir(){
-  local SRC="$1" tag="$2" now f b ident mt key prev pid_ pfs d STATE NEW
+  local SRC="$1" tag="$2" now f b ident mt key prev pid_ pfs d reason sz STATE NEW
   [ -d "$SRC" ] || return 0
   STATE="$CLEAN/seen_${tag}.state"
   if [ -L "$STATE" ]; then log "ABORT state is symlink: $STATE"; return 1; fi
   NEW=$(mktemp "$CLEAN/.seen.XXXXXX") || { log "FAIL mktemp state"; return 1; }
   if [ ! -f "$NEW" ] || [ -L "$NEW" ]; then log "FAIL insecure state temp"; rm -f "$NEW"; return 1; fi
   now=$(now_epoch); shopt -s nullglob
+  # ensure the manual-review folder exists (symlink-safe). We create it and move
+  # likely-clutter into it, but NEVER read it back, empty, archive, or delete it.
+  ensure_dir_no_symlink "$SRC" "$SRC/To Be Deleted" || log "WARN review dir unavailable: $SRC/To Be Deleted"
   for f in "$SRC"/*; do
     [ -d "$f" ] && continue
     [ -L "$f" ] && { log "SKIP symlink: $f"; continue; }
     b=$(basename "$f"); case "$b" in .*) continue ;; esac
     case "$b" in *.crdownload|*.part|*.download|*.partial|*.tmp|*.opdownload) log "SKIP in-progress: $f"; continue ;; esac
     if ! ident=$(file_ident "$f"); then log "FAIL stat (skip): $f"; continue; fi
-    key=$(path_key "$f"); mt=${ident##*:}
+    key=$(path_key "$f"); mt=${ident##*:}; sz=$(printf '%s' "$ident" | cut -d: -f3)
     if [ $(( now - mt )) -lt "$SETTLE" ]; then printf '%s %s %s\n' "$key" "$ident" "$now" >> "$NEW"; log "SKIP settling: $f"; continue; fi
+    # likely-clutter -> review folder "To Be Deleted" (logged with reason). This
+    # is a reversible review move, so it does not wait for 12h stability.
+    reason=$(clutter_reason "$b" "$sz")
+    if [ -n "$reason" ]; then
+      log "CLUTTER ($reason): $f -> To Be Deleted/"
+      safe_move "$f" "$SRC/To Be Deleted" "$SRC" || true
+      continue
+    fi
     prev=$(state_lookup "$STATE" "$key")
     if [ -z "$prev" ]; then printf '%s %s %s\n' "$key" "$ident" "$now" >> "$NEW"; log "OBSERVE new: $f"; continue; fi
     pid_=${prev% *}; pfs=${prev##* }
