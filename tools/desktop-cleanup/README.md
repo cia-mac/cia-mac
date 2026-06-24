@@ -28,9 +28,18 @@ ever deleted** — old files move to an `_Archive` you empty yourself.
 
 ## Install
 
+**First, on the Mac, run the pre-install gate from this folder** (it installs
+nothing — it runs the syntax check, the 19-assertion safety suite, and lints the
+rendered plist):
+
 ```sh
-# one time, on the Mac:
-open tools/desktop-cleanup/install-auto-cleanup.command   # or double-click it
+/bin/bash run-macos-tests.sh     # expect: SUMMARY: 19 passed, 0 failed
+```
+
+Only if that passes:
+
+```sh
+open install-auto-cleanup.command   # or double-click it
 ```
 
 macOS will likely prompt to grant the agent access to Desktop/Downloads
