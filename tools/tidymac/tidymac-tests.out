@@ -1,0 +1,52 @@
+### 1. TIME STABILITY: run1=no, immediate run2=no (B1), after 13h=yes (B2) ###
+  PASS: time-based stability (run1=no run2=no aged=yes)
+### 2. CHANGED before stable: identity reset, not moved ###
+  PASS: changed-before-stable not moved
+### 3. FRESH + in-progress suffix never moved ###
+  PASS: fresh + .part never moved
+### 4. COLLISION preserves both copies ###
+  PASS: collision safe
+### 5. HIDDEN left alone; visible moves after stability ###
+  PASS: dotfiles
+### 6. _cc_done_* only (single run) ###
+  PASS: developer marker
+### 7. ARCHIVE >30d; intermediate _Archive SYMLINK refused ###
+  PASS: intermediate symlink refused
+### 8. LOCK symlink rejected; target NOT deleted ###
+  PASS: lock symlink rejected
+### 9. PREFLIGHT symlinked root aborts whole run ###
+  PASS: preflight whole-run abort
+### 10. CROSS-FS refused (if distinct fs) ###
+  PASS: cross-fs refused
+### 11. REPORT atomic on du failure ###
+  PASS: report atomic
+### 12. PID lock dead reclaimed / live respected / reuse reclaimed ###
+  PASS: dead reclaimed
+  PASS: live respected
+  PASS: pid-reuse reclaimed
+### 13. STATE is whitespace-safe (path with spaces) ###
+  PASS: path with spaces handled
+### 14. INSTALLER refuses overwrite ###
+  SKIP
+### 15. INSTALLER rejects symlinked $HOME/Library (B3) ###
+  SKIP
+### 16. INSTALLER happy path: installs, verifies inode, first run ok ###
+  SKIP
+### 17. POST-MOVE INODE VERIFY: moved file keeps its dev:inode; dir _cc_done_ too ###
+  PASS: inode preserved+verified (file & dir)
+### 18. CLUTTER: empty file -> 'To Be Deleted' + reason logged ###
+  PASS: empty -> To Be Deleted (+reason)
+### 19. CLUTTER: .bak scratch file -> 'To Be Deleted' ###
+  PASS: .bak -> To Be Deleted
+### 20. CLUTTER: duplicate 'copy' name -> 'To Be Deleted' ###
+  PASS: duplicate copy -> To Be Deleted
+### 21. NOT clutter by age: old normal file is NOT disposable ###
+  PASS: old normal file not disposable
+### 22. 'To Be Deleted' is never emptied/purged ###
+  PASS: review folder never emptied
+### 23. COLLISION in 'To Be Deleted': keep both, never overwrite ###
+  PASS: collision keeps both, no overwrite
+### 24. .tmp stays in-progress-skipped (not clutter, left in place) ###
+  PASS: .tmp left in place
+
+SUMMARY: 23 passed, 0 failed
