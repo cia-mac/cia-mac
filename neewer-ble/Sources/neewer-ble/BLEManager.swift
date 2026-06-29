@@ -203,8 +203,9 @@ final class BLEManager: NSObject {
         guard canWithResponse || canWithoutResponse else {
             completion(BLEError.notWritable); return
         }
-        // Prefer write-with-response so we get a success/failure callback.
-        if canWithResponse {
+        // NEEWER lights act on write-WITHOUT-response; prefer it when offered.
+        // Fall back to write-with-response only when that's all the char supports.
+        if canWithResponse && !canWithoutResponse {
             writeCompletions[char.uuid] = { [weak self] err in
                 if err == nil {
                     self?.lastSuccessfulWrite = (service.uuid, char.uuid, data, true)
