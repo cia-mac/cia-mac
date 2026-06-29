@@ -52,7 +52,12 @@ CoreBluetooth hides the BLE MAC on both macOS and iOS. Two ways to get it:
 | NW-20200015&FFFFFFFF | F1EC7C6C-24C6-8145-5F16-CF508BDD6C83 | `DF:E9:CA:4A:07:BC` | `69400002` | yes |
 | NEEWER-GL1C | 37C9EA18-95F7-8CE2-15A1-6115EC833B67 | `D8:BF:A9:EE:CF:38` | `69400002` | yes |
 | NW-20240061&FFFFFFFF | 6312A2EB-8EB5-9701-C523-8847EC24AD68 | `C2:7F:82:EC:60:21` | `69400002` | yes |
-| NEEWER-T100C-2 | 2A0071E1-6488-BE00-16F5-604D3CF9BEFF | (not captured) | (not connected) | CCT only |
+| NEEWER-T100C-2 | 2A0071E1-6488-BE00-16F5-604D3CF9BEFF | unreachable | unreachable | CCT only |
+
+T100C-2 is unreachable from this spot: -82 dBm, `connect` times out, and it
+advertises **no manufacturer data**, so the advert-MAC trick cannot address it
+(the iOS app cannot derive its MAC either). Retry only from much closer, or grab
+its MAC via `system_profiler` after a successful connection.
 
 All control lives on service `69400001-B5A3-F393-E0A9-E50E24DCCA99`: write char
 `69400002`, notify char `69400003`. (The characteristic *index* in the CLI
@@ -90,6 +95,8 @@ all dim (bri ~12-14). Baked into the app as the Mellow scene preset.
 
 ## Open / next
 
-- Capture the T100C-2 MAC and bring it under control (CCT-only, dim warm).
-- App: app icon, rename if desired, persist light state, scene editor.
-- Decide whether the iOS app is its own product lane vs living under cia-mac.
+- T100C-2 unreachable from here (see note above). Retry from closer if wanted.
+- App has an icon now (warm->purple glow orb, `neewer-ios/icon/make_icon.py`).
+- App: rename if desired, persist last light state, scene editor.
+- Decide whether the iOS app graduates into its own product lane vs cia-mac.
+  Default for now: stays under cia-mac alongside neewer-ble.

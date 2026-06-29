@@ -12,12 +12,14 @@
 		8CBBCC1AA69687E15938A9E3 /* ColorWheel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F75A2FD0FC67A2636E45290 /* ColorWheel.swift */; };
 		ABE81FB6410E83BF07E1ED7D /* GlowApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2748BC3E74111CEE77B063D /* GlowApp.swift */; };
 		BCA4AC58665F8B8FE390376F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4433DB18421C4CA85750989B /* ContentView.swift */; };
+		EE93B41A35C6ABC9D0A4261C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 600EBE5A4AACA57C2E934A09 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		0C223564EEBED64C6AE29894 /* Glow.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Glow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4433DB18421C4CA85750989B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		5F75A2FD0FC67A2636E45290 /* ColorWheel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorWheel.swift; sourceTree = "<group>"; };
+		600EBE5A4AACA57C2E934A09 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9B04916F435AF88E8D460837 /* LightController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightController.swift; sourceTree = "<group>"; };
 		C082C8BD79A6D167756112EC /* NeewerProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeewerProtocol.swift; sourceTree = "<group>"; };
 		E2748BC3E74111CEE77B063D /* GlowApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlowApp.swift; sourceTree = "<group>"; };
@@ -27,6 +29,7 @@
 		118C38EAB65C56AEC85E9C57 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				600EBE5A4AACA57C2E934A09 /* Assets.xcassets */,
 				5F75A2FD0FC67A2636E45290 /* ColorWheel.swift */,
 				4433DB18421C4CA85750989B /* ContentView.swift */,
 				E2748BC3E74111CEE77B063D /* GlowApp.swift */,
@@ -60,6 +63,7 @@
 			buildConfigurationList = DE1BA3081460F0FD6659E9CE /* Build configuration list for PBXNativeTarget "Glow" */;
 			buildPhases = (
 				C1B31A4C65D364170CD10953 /* Sources */,
+				B334C7833323C73D058715E9 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -101,6 +105,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B334C7833323C73D058715E9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE93B41A35C6ABC9D0A4261C /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		C1B31A4C65D364170CD10953 /* Sources */ = {
