@@ -1,0 +1,28 @@
+name: neewer-ble (macOS build)
+
+# Compiles the Swift CoreBluetooth CLI on a real macOS runner. This verifies the
+# code builds against the actual CoreBluetooth SDK — it does NOT (and cannot)
+# exercise Bluetooth hardware, which requires a physical Mac + the device.
+on:
+  push:
+    paths:
+      - 'neewer-ble/**'
+      - '.github/workflows/neewer-ble.yml'
+  pull_request:
+    paths:
+      - 'neewer-ble/**'
+      - '.github/workflows/neewer-ble.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: neewer-ble
+    steps:
+      - uses: actions/checkout@v4
+      - name: Swift toolchain
+        run: swift --version
+      - name: Build
+        run: swift build -v
