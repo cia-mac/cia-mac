@@ -1,0 +1,9 @@
+# SwiftPM build artifacts
+.build/
+.swiftpm/
+*.xcodeproj
+
+# Local runtime data written by the CLI (reports + saved commands + protocol profile)
+neewer-data/
+
+.DS_Store
