@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="theme-color" content="#1b2330" />
+<title>Alphorn Play-Along</title>
+<style>
+  :root{
+    --bg:#141a24; --panel:#1d2633; --panel2:#232f40; --ink:#eaf0f7;
+    --muted:#8fa3bd; --line:#33425a; --accent:#e0a24a; --accent2:#6fb1a6;
+    --bad:#c46b5a; --good:#6fb1a6; --shadow:0 6px 22px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:radial-gradient(120% 80% at 50% -10%, #28384e 0%, #141a24 60%) fixed;
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:680px;margin:0 auto;padding:18px 16px 60px}
+  header h1{font-size:22px;margin:0 0 2px}
+  header p{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.45}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0;box-shadow:var(--shadow)}
+  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:0 0 10px;font-weight:600}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .btn{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:11px 14px;font-size:14px;font-weight:600;cursor:pointer;color:var(--ink);transition:.12s;flex:1;min-width:96px}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:linear-gradient(180deg,#e9ad57,#d8923c);border-color:#caa44e;color:#241a08}
+  .btn.accent{background:linear-gradient(180deg,#79bdb1,#5ca093);border-color:#5ca093;color:#06201b}
+  .btn.ghost{background:transparent}
+  .btn[disabled]{opacity:.45;cursor:default}
+  .drop{border:2px dashed var(--line);border-radius:14px;padding:22px 14px;text-align:center;color:var(--muted);font-size:14px;cursor:pointer}
+  .drop.drag{border-color:var(--accent);color:var(--ink);background:#1a2433}
+  input[type=file]{display:none}
+  canvas{width:100%;height:120px;display:block;background:#121a26;border-radius:10px;border:1px solid var(--line)}
+  .wfwrap{position:relative}
+  .tline{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px}
+  select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 10px;color:var(--ink);font:inherit}
+  .pitchbox{display:flex;gap:12px;align-items:stretch}
+  .big{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
+  .big .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+  .big .val{font-size:30px;font-weight:800;line-height:1.1;margin-top:4px}
+  .big .sub{font-size:12px;color:var(--accent2);margin-top:2px}
+  .big.detuned .sub{color:var(--bad)}
+  .keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  @media(min-width:520px){.keys{grid-template-columns:repeat(6,1fr)}}
+  .key{aspect-ratio:1/1.05;border-radius:12px;border:1px solid var(--line);background:linear-gradient(180deg,#26334a,#1c2636);
+       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;user-select:none;transition:transform .06s,background .1s}
+  .key .note{font-size:18px;font-weight:700}
+  .key .role{font-size:11px;color:var(--accent2)}
+  .key.lit{outline:2px solid var(--accent);outline-offset:-2px}
+  .key.active{background:linear-gradient(180deg,#e9ad57,#cf8b34);color:#241a08;transform:translateY(2px)}
+  .key.active .role{color:#3a2a0c}
+  .slbl{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:2px}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .status{font-size:12px;color:var(--muted);min-height:16px;margin-top:8px}
+  footer{color:#5d6f88;font-size:11px;text-align:center;margin-top:18px;line-height:1.5}
+  a{color:var(--accent2)}
+  .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .seg button{flex:1;background:var(--panel2);border:0;color:var(--ink);padding:9px 0;font:inherit;cursor:pointer}
+  .seg button.on{background:var(--accent);color:#241a08;font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🏔️ Alphorn Play-Along</h1>
+    <p>Load a track, see its waveform, slow it down, loop a phrase, and watch the live pitch
+       map onto your alphorn's playable notes — so you can learn a melody by ear on the horn.
+       Your audio stays in your browser; nothing is uploaded.</p>
+  </header>
+
+  <div class="card">
+    <h2>1 · Load your track</h2>
+    <div class="drop" id="drop">Tap to choose an audio file, or drag one here<br><small>mp3 · m4a · wav · aac</small></div>
+    <input type="file" id="file" accept="audio/*" />
+    <div class="status" id="loadStatus">No track loaded yet.</div>
+  </div>
+
+  <div class="card">
+    <h2>2 · Waveform — tap to seek</h2>
+    <div class="wfwrap"><canvas id="wf" width="900" height="240"></canvas></div>
+    <div class="tline"><span id="tcur">0:00</span><span id="tdur">0:00</span></div>
+  </div>
+
+  <div class="card">
+    <h2>3 · Transport</h2>
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn primary" id="play" disabled>▶ Play</button>
+      <button class="btn ghost" id="loopBtn" disabled>↻ Loop: off</button>
+    </div>
+    <div class="slbl"><span>Speed (pitch-preserving off — slows pitch too)</span><span id="rateV">1.00×</span></div>
+    <div class="seg" id="rateSeg">
+      <button data-r="0.5">0.5×</button><button data-r="0.75">0.75×</button>
+      <button class="on" data-r="1">1×</button>
+    </div>
+    <div class="status" id="loopStatus">Loop uses the section you set by tapping A then B on the waveform (long-press a point to set A/B).</div>
+  </div>
+
+  <div class="card">
+    <h2>4 · Live pitch → alphorn</h2>
+    <div class="row" style="margin-bottom:10px">
+      <label style="font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:5px;flex:1">Alphorn key
+        <select id="key"></select>
+      </label>
+    </div>
+    <div class="pitchbox">
+      <div class="big"><div class="lbl">Track note</div><div class="val" id="trackNote">—</div><div class="sub" id="trackHz">play to detect</div></div>
+      <div class="big" id="alpBox"><div class="lbl">Nearest alphorn</div><div class="val" id="alpNote">—</div><div class="sub" id="alpRole">partial · role</div></div>
+    </div>
+    <div style="height:10px"></div>
+    <div class="keys" id="keys"></div>
+    <div class="status">The matching key lights up as the track plays. Tap any key to sound the horn and check yourself.</div>
+  </div>
+
+  <footer>Alphorn Play-Along · audio is processed locally in your browser and never uploaded or stored.</footer>
+</div>
+
+<script>
+"use strict";
+(function(){
+  const $=id=>document.getElementById(id);
+  const NOTE_NAMES=["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"];
+  const midiToFreq=m=>440*Math.pow(2,(m-69)/12);
+  function freqToName(f){const m=Math.round(69+12*Math.log2(f/440));return NOTE_NAMES[((m%12)+12)%12]+(Math.floor(m/12)-1);}
+  function fmt(t){t=Math.max(0,t|0);return Math.floor(t/60)+":"+String(t%60).padStart(2,"0");}
+
+  // alphorn keys & playable (in-tune) partials for the play-along keypad
+  const KEYS=[{name:"F♯ / G♭ (most common)",midi:30},{name:"F",midi:29},{name:"G",midi:31},
+    {name:"E♭",midi:27},{name:"E",midi:28},{name:"A♭",midi:32},{name:"A",midi:33},{name:"B♭",midi:34}];
+  const PADS=[{n:6,role:"sol"},{n:8,role:"do"},{n:9,role:"re"},{n:10,role:"mi"},{n:12,role:"sol"},{n:15,role:"ti"}];
+  // full series for nearest-match (incl. detuned)
+  const SERIES=[{n:6,d:false},{n:7,d:true},{n:8,d:false},{n:9,d:false},{n:10,d:false},
+    {n:11,d:true},{n:12,d:false},{n:13,d:true},{n:14,d:true},{n:15,d:false},{n:16,d:false}];
+  let fundMidi=KEYS[0].midi;
+  const pf=n=>midiToFreq(fundMidi)*n;
+
+  // ---- audio ----
+  let actx=null, buffer=null, src=null, analyser=null, td=null;
+  let playing=false, startCtxTime=0, startOffset=0, rate=1;
+  let loopOn=false, loopA=null, loopB=null;
+  function ensure(){ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)(); }
+
+  // ---- synth (play-along horn) ----
+  let WAVE=null;
+  function wave(){ if(WAVE) return WAVE;
+    const a=[0,1,0.55,0.32,0.2,0.12,0.075,0.045,0.026,0.015,0.009];
+    const re=new Float32Array(a.length), im=new Float32Array(a.length);
+    for(let i=0;i<a.length;i++) im[i]=a[i];
+    WAVE=actx.createPeriodicWave(re,im,{disableNormalization:false}); return WAVE;
+  }
+  function blow(freq){ ensure(); if(actx.state==="suspended") actx.resume();
+    const o=actx.createOscillator(); o.setPeriodicWave(wave()); o.frequency.value=freq;
+    const lp=actx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=2400;
+    const g=actx.createGain(); const t=actx.currentTime;
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.8,t+0.05);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.6);
+    o.connect(lp); lp.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+0.65);
+  }
+
+  // ---- load ----
+  async function loadArrayBuffer(ab,label){
+    ensure();
+    $("loadStatus").textContent="Decoding…";
+    try{
+      buffer=await actx.decodeAudioData(ab);
+      drawWave();
+      $("tdur").textContent=fmt(buffer.duration);
+      $("loadStatus").textContent=`Loaded: ${label} — ${fmt(buffer.duration)}, ${buffer.sampleRate} Hz.`;
+      $("play").disabled=false; $("loopBtn").disabled=false;
+      startOffset=0; updatePlayhead(0);
+    }catch(e){ $("loadStatus").textContent="Could not decode that file: "+e.message; }
+  }
+  $("drop").onclick=()=>$("file").click();
+  $("file").onchange=e=>{ const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader(); r.onload=()=>loadArrayBuffer(r.result,f.name); r.readAsArrayBuffer(f); };
+  ["dragover","dragenter"].forEach(ev=>$("drop").addEventListener(ev,e=>{e.preventDefault();$("drop").classList.add("drag");}));
+  ["dragleave","drop"].forEach(ev=>$("drop").addEventListener(ev,e=>{e.preventDefault();$("drop").classList.remove("drag");}));
+  $("drop").addEventListener("drop",e=>{const f=e.dataTransfer.files[0];if(f){const r=new FileReader();r.onload=()=>loadArrayBuffer(r.result,f.name);r.readAsArrayBuffer(f);}});
+
+  // optional deep-link: ?src=URL (same-origin audio) auto-loads
+  const params=new URLSearchParams(location.search);
+  if(params.get("src")){
+    const u=params.get("src");
+    fetch(u).then(r=>r.arrayBuffer()).then(ab=>loadArrayBuffer(ab,u.split("/").pop()))
+      .catch(e=>$("loadStatus").textContent="Auto-load failed: "+e.message);
+  }
+
+  // ---- waveform ----
+  const cv=$("wf"), cx=cv.getContext("2d");
+  let peaks=null;
+  function computePeaks(){
+    const w=cv.width, ch=buffer.getChannelData(0), step=Math.floor(ch.length/w);
+    peaks=new Float32Array(w);
+    for(let i=0;i<w;i++){ let max=0; const s=i*step;
+      for(let j=0;j<step;j+=64){ const v=Math.abs(ch[s+j]||0); if(v>max)max=v; }
+      peaks[i]=max; }
+  }
+  function drawWave(){
+    computePeaks();
+    const w=cv.width,h=cv.height; cx.clearRect(0,0,w,h);
+    cx.fillStyle="#121a26"; cx.fillRect(0,0,w,h);
+    cx.strokeStyle="#3a567a"; cx.beginPath();
+    for(let i=0;i<w;i++){ const a=peaks[i]*0.94*(h/2); cx.moveTo(i,h/2-a); cx.lineTo(i,h/2+a); }
+    cx.stroke();
+    overlay();
+  }
+  function overlay(){
+    // redraw markers + playhead on top (called each frame)
+    if(!peaks) return;
+    const w=cv.width,h=cv.height;
+    // base
+    cx.clearRect(0,0,w,h); cx.fillStyle="#121a26"; cx.fillRect(0,0,w,h);
+    cx.strokeStyle="#3a567a"; cx.beginPath();
+    for(let i=0;i<w;i++){ const a=peaks[i]*0.94*(h/2); cx.moveTo(i,h/2-a); cx.lineTo(i,h/2+a); } cx.stroke();
+    if(buffer){
+      const dur=buffer.duration;
+      if(loopA!=null&&loopB!=null){ const x1=loopA/dur*w,x2=loopB/dur*w;
+        cx.fillStyle="rgba(224,162,74,.16)"; cx.fillRect(x1,0,x2-x1,h);
+        cx.strokeStyle="#e0a24a"; cx.beginPath();cx.moveTo(x1,0);cx.lineTo(x1,h);cx.moveTo(x2,0);cx.lineTo(x2,h);cx.stroke(); }
+      const cur=currentTime(); const px=cur/dur*w;
+      cx.strokeStyle="#6fb1a6"; cx.lineWidth=2; cx.beginPath();cx.moveTo(px,0);cx.lineTo(px,h);cx.stroke();cx.lineWidth=1;
+    }
+  }
+  // seek + A/B by tap / long-press
+  let pressTimer=null;
+  cv.addEventListener("pointerdown",e=>{
+    if(!buffer) return; const rect=cv.getBoundingClientRect();
+    const frac=(e.clientX-rect.left)/rect.width, t=frac*buffer.duration;
+    pressTimer=setTimeout(()=>{ // long press → set A then B
+      if(loopA==null||loopB!=null){ loopA=t; loopB=null; $("loopStatus").textContent=`Loop A set at ${fmt(t)} — long-press again for B.`; }
+      else { loopB=Math.max(t,loopA+0.05); $("loopStatus").textContent=`Loop ${fmt(loopA)}–${fmt(loopB)}. Tap “Loop” to enable.`; }
+      pressTimer=null; overlay();
+    },450);
+  });
+  cv.addEventListener("pointerup",e=>{
+    if(!buffer) return;
+    if(pressTimer){ clearTimeout(pressTimer); pressTimer=null;
+      const rect=cv.getBoundingClientRect(); const frac=(e.clientX-rect.left)/rect.width;
+      seek(frac*buffer.duration); }
+  });
+
+  // ---- playback ----
+  function currentTime(){
+    if(!buffer) return 0;
+    if(!playing) return startOffset;
+    let t=startOffset+(actx.currentTime-startCtxTime)*rate;
+    if(loopOn&&loopA!=null&&loopB!=null){ if(t>loopB){ /* wrap handled by source loop */ } }
+    return Math.min(t,buffer.duration);
+  }
+  function stopSrc(){ if(src){ try{src.onended=null;src.stop();}catch(e){} src=null; } }
+  function play(from){
+    ensure(); if(actx.state==="suspended") actx.resume();
+    stopSrc();
+    src=actx.createBufferSource(); src.buffer=buffer; src.playbackRate.value=rate;
+    analyser=actx.createAnalyser(); analyser.fftSize=2048; td=new Float32Array(analyser.fftSize);
+    src.connect(analyser); analyser.connect(actx.destination);
+    if(loopOn&&loopA!=null&&loopB!=null){ src.loop=true; src.loopStart=loopA; src.loopEnd=loopB; }
+    startOffset=(from!=null)?from:currentTime();
+    if(loopOn&&loopA!=null&&loopB!=null&&(startOffset<loopA||startOffset>loopB)) startOffset=loopA;
+    startCtxTime=actx.currentTime;
+    src.start(0,startOffset);
+    src.onended=()=>{ if(playing&&!src.loop){ playing=false; $("play").textContent="▶ Play"; } };
+    playing=true; $("play").textContent="⏸ Pause";
+  }
+  function pause(){ if(!playing) return; startOffset=currentTime(); stopSrc(); playing=false; $("play").textContent="▶ Play"; }
+  function seek(t){ const wasPlaying=playing; pause(); startOffset=t; updatePlayhead(t); if(wasPlaying) play(t); else overlay(); }
+  $("play").onclick=()=>{ if(!buffer) return; playing?pause():play(); };
+  $("loopBtn").onclick=()=>{ loopOn=!loopOn; $("loopBtn").textContent="↻ Loop: "+(loopOn?"on":"off");
+    if(loopOn&&(loopA==null||loopB==null)) $("loopStatus").textContent="Set a loop first: long-press the waveform for A, then again for B.";
+    if(playing) play(currentTime()); };
+  document.querySelectorAll("#rateSeg button").forEach(b=>b.onclick=()=>{
+    document.querySelectorAll("#rateSeg button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on"); rate=+b.dataset.r; $("rateV").textContent=rate.toFixed(2)+"×";
+    if(playing) play(currentTime());
+  });
+
+  function updatePlayhead(t){ $("tcur").textContent=fmt(t); overlay(); }
+
+  // ---- pitch detection (autocorrelation) ----
+  function detectPitch(buf,sr){
+    let n=buf.length, rms=0;
+    for(let i=0;i<n;i++) rms+=buf[i]*buf[i];
+    rms=Math.sqrt(rms/n); if(rms<0.008) return -1;
+    let r1=0,r2=n-1,thres=0.2;
+    for(let i=0;i<n/2;i++) if(Math.abs(buf[i])<thres){r1=i;break;}
+    for(let i=1;i<n/2;i++) if(Math.abs(buf[n-i])<thres){r2=n-i;break;}
+    buf=buf.slice(r1,r2); n=buf.length;
+    const c=new Float32Array(n);
+    for(let i=0;i<n;i++) for(let j=0;j<n-i;j++) c[i]+=buf[j]*buf[j+i];
+    let d=0; while(c[d]>c[d+1]) d++;
+    let maxv=-1,maxp=-1;
+    for(let i=d;i<n;i++) if(c[i]>maxv){maxv=c[i];maxp=i;}
+    let t0=maxp;
+    if(maxp>0&&maxp<n-1){ const x1=c[maxp-1],x2=c[maxp],x3=c[maxp+1];
+      const a=(x1+x3-2*x2)/2,b=(x3-x1)/2; if(a) t0=maxp-b/(2*a); }
+    return sr/t0;
+  }
+  function nearestPartial(freq){
+    let best=null,bestc=1e9;
+    SERIES.forEach(p=>{ const f=pf(p.n); const cents=Math.abs(1200*Math.log2(freq/f));
+      if(cents<bestc){bestc=cents;best={...p,f,cents};} });
+    return best;
+  }
+  const padEls=[];
+  function buildPads(){
+    const k=$("keys"); k.innerHTML=""; padEls.length=0;
+    PADS.forEach(p=>{ const el=document.createElement("div"); el.className="key";
+      el.innerHTML=`<div class="note">${freqToName(pf(p.n))}</div><div class="role">${p.role} ·${p.n}</div>`;
+      el.dataset.n=p.n;
+      const d=ev=>{ev.preventDefault(); blow(pf(p.n)); el.classList.add("active"); setTimeout(()=>el.classList.remove("active"),160);};
+      el.addEventListener("touchstart",d,{passive:false}); el.addEventListener("mousedown",d);
+      k.appendChild(el); padEls.push(el); });
+  }
+  function litPartial(n){ padEls.forEach(el=>el.classList.toggle("lit",+el.dataset.n===n)); }
+
+  // ---- animation loop ----
+  function frame(){
+    requestAnimationFrame(frame);
+    if(playing&&analyser){
+      analyser.getFloatTimeDomainData(td);
+      const f=detectPitch(td,actx.sampleRate);
+      if(f>0&&f<2000){
+        $("trackNote").textContent=freqToName(f);
+        $("trackHz").textContent=f.toFixed(1)+" Hz";
+        const np=nearestPartial(f);
+        $("alpNote").textContent=freqToName(np.f);
+        $("alpRole").textContent=`partial ${np.n} · ${np.cents.toFixed(0)}¢ off`;
+        $("alpBox").classList.toggle("detuned",np.d||np.cents>45);
+        litPartial(np.n);
+      }
+    }
+    if(buffer){
+      const t=currentTime();
+      $("tcur").textContent=fmt(t);
+      overlay();
+    }
+  }
+  requestAnimationFrame(frame);
+
+  // ---- key select ----
+  (function(){ const sel=$("key");
+    KEYS.forEach((k,i)=>{const o=document.createElement("option");o.value=i;o.textContent=k.name;sel.appendChild(o);});
+    sel.onchange=()=>{ fundMidi=KEYS[+sel.value].midi; buildPads(); };
+  })();
+  buildPads();
+})();
+</script>
+</body>
+</html>
