@@ -375,6 +375,64 @@
   buildPads();
 })();
 
+/* ---------- Guide layer: spotlight walkthrough ---------- */
+(function(){
+  const $=id=>document.getElementById(id);
+  const steps=[
+    {sel:"#key", t:"1 · Pick your horn", b:"Choose the alphorn's key. Every note retunes to it — F♯ is the classic Swiss horn."},
+    {sel:".tabs", t:"2 · Two tools", b:"Instrument = play the horn. Play-Along = follow along with a track. Switch anytime."},
+    {sel:"#padsInst", tab:"inst", t:"3 · Play notes", b:"Tap these to sound the alphorn. These are the ONLY notes a real alphorn can play; the red ones are its naturally out-of-tune overtones."},
+    {sel:"#vib", tab:"inst", card:true, t:"4 · Shape the tone", b:"Vibrato, reverb and brightness change the character of the sound."},
+    {sel:"#playPreset", tab:"inst", card:true, t:"5 · Hear a tune", b:"Play the built-in original line, or export a ~60-second WAV to use elsewhere."},
+    {sel:"#drop", tab:"play", t:"6 · Load a track", b:"On Play-Along, click here to pick an audio file from your computer. It stays local — nothing is uploaded."},
+    {sel:"#wf", tab:"play", t:"7 · The waveform", b:"Click to jump anywhere. Long-press to drop loop point A, long-press again for B, then tap Loop."},
+    {sel:"#rateSeg", tab:"play", card:true, t:"8 · Slow it down", b:"0.5× / 0.75× slow the track. 'Keep pitch' holds the original pitch while slow — ideal for learning by ear."},
+    {sel:"#padsPlay", tab:"play", t:"9 · Follow on the horn", b:"As the track plays, the nearest playable alphorn note lights up here, so you know what to play."}
+  ];
+  const css=document.createElement("style");
+  css.textContent="#gBtn{position:fixed;right:16px;bottom:16px;z-index:40;width:50px;height:50px;border-radius:50%;border:1px solid #caa44e;background:linear-gradient(180deg,#e9ad57,#d8923c);color:#241a08;font-size:24px;font-weight:800;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.45)}"
+   +"#gOv{position:fixed;inset:0;z-index:50;display:none}"
+   +"#gSpot{position:absolute;border-radius:14px;box-shadow:0 0 0 9999px rgba(10,14,20,.82);border:2px solid #e0a24a;transition:all .22s ease;pointer-events:none}"
+   +"#gTip{position:absolute;max-width:300px;width:calc(100% - 32px);background:#1d2633;border:1px solid #33425a;border-radius:14px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.5);z-index:51}"
+   +"#gTip h3{margin:0 0 6px;font-size:15px;color:#eaf0f7}#gTip p{margin:0 0 12px;font-size:13px;color:#8fa3bd;line-height:1.5}"
+   +"#gTip .gnav{display:flex;gap:8px}#gTip .gnav button{flex:1;padding:9px;border-radius:10px;border:1px solid #33425a;background:#232f40;color:#eaf0f7;font:inherit;font-weight:600;cursor:pointer}"
+   +"#gTip .gnav button.prim{background:linear-gradient(180deg,#e9ad57,#d8923c);color:#241a08;border-color:#caa44e}"
+   +"#gTip .gcount{font-size:11px;color:#8fa3bd;text-align:center;margin-bottom:8px}"
+   +"#gSkip{position:fixed;top:14px;right:16px;z-index:52;background:transparent;border:0;color:#cdd8e8;font:inherit;cursor:pointer;text-decoration:underline}";
+  document.head.appendChild(css);
+  const ov=document.createElement("div");ov.id="gOv";
+  ov.innerHTML='<div id="gSpot"></div><button id="gSkip">Skip ✕</button><div id="gTip"><div class="gcount"></div><h3></h3><p></p><div class="gnav"><button class="gback">Back</button><button class="gnext prim">Next</button></div></div>';
+  document.body.appendChild(ov);
+  const btn=document.createElement("button");btn.id="gBtn";btn.textContent="?";btn.title="How to use";document.body.appendChild(btn);
+  const spot=$("gSpot"),tip=$("gTip");let i=0;
+  function setTab(name){if(!name)return;document.querySelectorAll(".tab").forEach(t=>{if(t.dataset.tab===name)t.click();});}
+  function target(s){let el=document.querySelector(s.sel);if(el&&s.card)el=el.closest(".card")||el;return el;}
+  function place(el,s){
+    const r=el.getBoundingClientRect(),pad=8;
+    spot.style.left=(r.left-pad)+"px";spot.style.top=(r.top-pad)+"px";
+    spot.style.width=(r.width+pad*2)+"px";spot.style.height=(r.height+pad*2)+"px";
+    tip.querySelector(".gcount").textContent="Step "+(i+1)+" of "+steps.length;
+    tip.querySelector("h3").textContent=s.t;tip.querySelector("p").textContent=s.b;
+    tip.querySelector(".gback").style.visibility=i===0?"hidden":"visible";
+    tip.querySelector(".gnext").textContent=i===steps.length-1?"Done":"Next";
+    const th=tip.offsetHeight||170;
+    const top=(window.innerHeight-r.bottom>th+24)?(r.bottom+pad+12):Math.max(12,r.top-th-pad-12);
+    const left=Math.min(Math.max(12,r.left),Math.max(12,window.innerWidth-tip.offsetWidth-12));
+    tip.style.top=top+"px";tip.style.left=left+"px";
+  }
+  function show(n){i=Math.max(0,Math.min(steps.length-1,n));const s=steps[i];setTab(s.tab);
+    setTimeout(()=>{const el=target(s);if(!el){i<steps.length-1?show(i+1):close();return;}
+      el.scrollIntoView({block:"center",behavior:"smooth"});setTimeout(()=>place(el,s),260);},s.tab?150:0);}
+  function open(){ov.style.display="block";show(0);}
+  function close(){ov.style.display="none";try{localStorage.setItem("alphornGuideSeen","1");}catch(e){}}
+  btn.onclick=open;$("gSkip").onclick=close;
+  tip.querySelector(".gnext").onclick=()=>{i>=steps.length-1?close():show(i+1);};
+  tip.querySelector(".gback").onclick=()=>show(i-1);
+  window.addEventListener("resize",()=>{if(ov.style.display==="block"){const s=steps[i],el=target(s);if(el)place(el,s);}});
+  let seen=false;try{seen=localStorage.getItem("alphornGuideSeen");}catch(e){}
+  if(!seen)setTimeout(open,600);
+})();
+
 // PWA: register the service worker for offline / installable behaviour
 if("serviceWorker" in navigator){
   window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{});});
