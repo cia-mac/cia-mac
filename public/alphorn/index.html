@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="theme-color" content="#1b2330" />
+<title>Alphorn Studio</title>
+<style>
+  :root{
+    --bg:#141a24; --panel:#1d2633; --panel2:#232f40; --ink:#eaf0f7;
+    --muted:#8fa3bd; --line:#33425a; --accent:#e0a24a; --accent2:#6fb1a6;
+    --bad:#c46b5a; --good:#6fb1a6;
+    --shadow:0 6px 22px rgba(0,0,0,.35);
+    font-synthesis:none;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:
+     radial-gradient(120% 80% at 50% -10%, #28384e 0%, #141a24 60%) fixed;
+     color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:680px;margin:0 auto;padding:18px 16px 60px}
+  header h1{font-size:22px;margin:0 0 2px;letter-spacing:.4px}
+  header p{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.45}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+        padding:14px;margin:12px 0;box-shadow:var(--shadow)}
+  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);
+           margin:0 0 10px;font-weight:600}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  label.fld{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted);flex:1;min-width:120px}
+  select,button{font:inherit;color:var(--ink)}
+  select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 10px}
+  .btn{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:11px 14px;
+       font-size:14px;font-weight:600;cursor:pointer;transition:.12s;flex:1;min-width:120px}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:linear-gradient(180deg,#e9ad57,#d8923c);border-color:#caa44e;color:#241a08}
+  .btn.accent{background:linear-gradient(180deg,#79bdb1,#5ca093);border-color:#5ca093;color:#06201b}
+  .btn.ghost{background:transparent}
+  .btn[disabled]{opacity:.45;cursor:default}
+  /* partial keyboard */
+  .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  @media(min-width:520px){.keys{grid-template-columns:repeat(5,1fr)}}
+  .key{position:relative;aspect-ratio:1/1.05;border-radius:13px;border:1px solid var(--line);
+       background:linear-gradient(180deg,#26334a,#1c2636);display:flex;flex-direction:column;
+       align-items:center;justify-content:center;gap:2px;cursor:pointer;user-select:none;
+       transition:transform .06s, box-shadow .1s, background .1s}
+  .key .pn{font-size:11px;color:var(--muted)}
+  .key .note{font-size:20px;font-weight:700;line-height:1}
+  .key .role{font-size:11px;color:var(--accent2)}
+  .key .kb{position:absolute;top:6px;right:8px;font-size:10px;color:#62748f}
+  .key.detuned{border-color:#7a4f43}
+  .key.detuned .role{color:var(--bad)}
+  .key.active{background:linear-gradient(180deg,#e9ad57,#cf8b34);color:#241a08;transform:translateY(2px);
+              box-shadow:inset 0 2px 8px rgba(0,0,0,.3)}
+  .key.active .pn,.key.active .role,.key.active .kb{color:#3a2a0c}
+  .legend{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.5}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:middle;margin:0 4px 0 2px}
+  .dot.g{background:var(--good)} .dot.b{background:var(--bad)}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .slbl{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:2px}
+  .status{font-size:12px;color:var(--muted);min-height:16px;margin-top:8px}
+  .pill{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:999px;
+        padding:3px 9px;font-size:11px;color:var(--muted);margin:2px 4px 2px 0}
+  footer{color:#5d6f88;font-size:11px;text-align:center;margin-top:18px;line-height:1.5}
+  a{color:var(--accent2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🏔️ Alphorn Studio</h1>
+    <p>A natural-overtone alphorn synth. The horn has no valves — you can only sound the
+       partials of one fundamental, so only the playable overtones light up here.
+       Pick a key, tap the notes, play the built-in tune, record your own, and export a WAV.</p>
+  </header>
+
+  <div class="card">
+    <h2>Horn</h2>
+    <div class="row">
+      <label class="fld">Alphorn key (fundamental)
+        <select id="key"></select>
+      </label>
+      <label class="fld">Master volume
+        <input id="vol" type="range" min="0" max="1" step="0.01" value="0.85" />
+      </label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Notes — tap to play</h2>
+    <div class="keys" id="keys"></div>
+    <div class="legend">
+      <span class="dot g"></span>in tune &nbsp;&nbsp;
+      <span class="dot b"></span>natural “out-of-tune” overtone (7·11·13·14) — the alphorn’s real character.
+      No proper <b>fa</b> (4th) or <b>la</b> (6th) exists in tune — that’s the horn, not a bug.
+      <br>Keyboard: <span id="kbhint"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Tone</h2>
+    <div class="row">
+      <div style="flex:1;min-width:140px">
+        <div class="slbl"><span>Vibrato</span><span id="vibV">18¢</span></div>
+        <input id="vib" type="range" min="0" max="40" step="1" value="18" />
+      </div>
+      <div style="flex:1;min-width:140px">
+        <div class="slbl"><span>Reverb (alp glow)</span><span id="revV">35%</span></div>
+        <input id="rev" type="range" min="0" max="100" step="1" value="35" />
+      </div>
+      <div style="flex:1;min-width:140px">
+        <div class="slbl"><span>Brightness</span><span id="briV">2.2k</span></div>
+        <input id="bri" type="range" min="600" max="6000" step="50" value="2200" />
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Built-in tune — “Driftwood” (original, in the Fish&nbsp;Beach mood)</h2>
+    <div class="row" style="margin-bottom:10px">
+      <div style="flex:1;min-width:160px">
+        <div class="slbl"><span>Tempo</span><span id="bpmV">88 BPM</span></div>
+        <input id="bpm" type="range" min="56" max="120" step="1" value="88" />
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn primary" id="playPreset">▶ Play tune</button>
+      <button class="btn ghost" id="stopPreset" disabled>■ Stop</button>
+    </div>
+    <div class="status" id="presetStatus">A gentle 8-bar line that sits entirely on the playable overtones.</div>
+  </div>
+
+  <div class="card">
+    <h2>Record your own</h2>
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn accent" id="recBtn">● Record</button>
+      <button class="btn ghost" id="playRec" disabled>▶ Play take</button>
+      <button class="btn ghost" id="clearRec" disabled>Clear</button>
+    </div>
+    <div class="status" id="recStatus">Hit Record, then tap notes in time. Your taps and their timing are captured.</div>
+  </div>
+
+  <div class="card">
+    <h2>Export audio (.wav)</h2>
+    <div class="row">
+      <button class="btn" id="expTune">⬇ Tune ×3 (~60s)</button>
+      <button class="btn" id="expTake" disabled>⬇ My take</button>
+    </div>
+    <div class="status" id="expStatus">Renders offline at full quality and downloads a WAV you can drop into ElevenLabs, GarageBand, etc.</div>
+  </div>
+
+  <footer>
+    Alphorn Studio · plays only the natural harmonic series of the selected fundamental.
+    “Driftwood” is an original melody in the spirit of the piece — not a copy of it.
+  </footer>
+</div>
+
+<script>
+"use strict";
+(function(){
+  // ---------- music data ----------
+  // Fundamental note (octave 1) MIDI numbers for common alphorn keys.
+  const KEYS = [
+    {name:"F♯ / G♭  (~3.4 m · most common)", midi:30},
+    {name:"F  (~3.6 m)", midi:29},
+    {name:"G  (~3.1 m)", midi:31},
+    {name:"E♭ (~3.9 m)", midi:27},
+    {name:"E  (~3.7 m)", midi:28},
+    {name:"A♭", midi:32},
+    {name:"A",  midi:33},
+    {name:"B♭", midi:34},
+  ];
+  // Playable partials and their solfège role relative to the fundamental.
+  // detuned = the characteristic non-tempered overtones.
+  const PARTIALS = [
+    {n:2,  role:"do",  detuned:false},
+    {n:3,  role:"sol", detuned:false},
+    {n:4,  role:"do",  detuned:false},
+    {n:5,  role:"mi",  detuned:false},
+    {n:6,  role:"sol", detuned:false},
+    {n:7,  role:"♭7",  detuned:true},
+    {n:8,  role:"do",  detuned:false},
+    {n:9,  role:"re",  detuned:false},
+    {n:10, role:"mi",  detuned:false},
+    {n:11, role:"♯4",  detuned:true},
+    {n:12, role:"sol", detuned:false},
+    {n:13, role:"♭6",  detuned:true},
+    {n:14, role:"♭7",  detuned:true},
+    {n:15, role:"ti",  detuned:false},
+    {n:16, role:"do",  detuned:false},
+  ];
+  const KEYMAP = ["1","2","3","4","5","6","7","8","9","0","q","w","e","r","t"]; // -> PARTIALS index
+  const NOTE_NAMES = ["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"];
+
+  // "Driftwood" — original line, encoded as [partial, beats]. 8 bars of 4/4.
+  const TUNE = [
+    [12,2],[10,1],[12,1],
+    [8,3],[9,1],
+    [10,2],[9,1],[8,1],
+    [15,4],
+    [8,2],[10,1],[12,1],
+    [12,2],[9,1],[10,1],
+    [9,2],[15,1],[8,1],
+    [8,4]
+  ];
+
+  // ---------- helpers ----------
+  const midiToFreq = m => 440 * Math.pow(2,(m-69)/12);
+  function freqToName(f){
+    const m = Math.round(69 + 12*Math.log2(f/440));
+    return NOTE_NAMES[((m%12)+12)%12] + (Math.floor(m/12)-1);
+  }
+  const $ = id => document.getElementById(id);
+
+  let fundMidi = KEYS[0].midi;
+  const partialFreq = n => midiToFreq(fundMidi) * n;
+
+  // ---------- audio engine ----------
+  let actx = null, master = null, comp = null, revGain = null, dryGain = null, conv = null;
+  let brightness = 2200, vibCents = 18, revAmt = 0.35, masterVol = 0.85;
+
+  // mellow brass-ish periodic wave (built once per context)
+  function makeWave(ctx){
+    const amps = [0,1,0.55,0.32,0.2,0.12,0.075,0.045,0.026,0.015,0.009];
+    const real = new Float32Array(amps.length);
+    const imag = new Float32Array(amps.length);
+    for(let i=0;i<amps.length;i++) imag[i]=amps[i];
+    return ctx.createPeriodicWave(real, imag, {disableNormalization:false});
+  }
+  function makeImpulse(ctx, seconds, decay){
+    const rate = ctx.sampleRate, len = Math.max(1, Math.floor(rate*seconds));
+    const buf = ctx.createBuffer(2, len, rate);
+    for(let ch=0; ch<2; ch++){
+      const d = buf.getChannelData(ch);
+      for(let i=0;i<len;i++){
+        d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, decay);
+      }
+    }
+    return buf;
+  }
+  function ensureCtx(){
+    if(actx) return;
+    actx = new (window.AudioContext||window.webkitAudioContext)();
+    buildGraph(actx, false);
+  }
+  let WAVE=null;
+  function buildGraph(ctx, offline){
+    master = ctx.createGain(); master.gain.value = masterVol;
+    comp = ctx.createDynamicsCompressor();
+    comp.threshold.value=-14; comp.knee.value=24; comp.ratio.value=3;
+    comp.attack.value=0.005; comp.release.value=0.25;
+    dryGain = ctx.createGain(); dryGain.gain.value = 1;
+    revGain = ctx.createGain(); revGain.gain.value = revAmt;
+    conv = ctx.createConvolver(); conv.buffer = makeImpulse(ctx, 2.4, 2.6);
+    dryGain.connect(master);
+    revGain.connect(conv); conv.connect(master);
+    master.connect(comp); comp.connect(ctx.destination);
+    WAVE = makeWave(ctx);
+    return {dry:dryGain, rev:revGain};
+  }
+
+  // Build one alphorn voice on a given context/buses. Returns nothing (self-scheduling).
+  function voice(ctx, buses, freq, t0, dur, opts){
+    opts = opts||{};
+    const bright = opts.bright ?? brightness;
+    const vib = (opts.vib ?? vibCents);
+    const osc = ctx.createOscillator();
+    osc.setPeriodicWave(opts.wave || WAVE);
+    osc.frequency.value = freq;
+
+    // vibrato (slight, delayed)
+    if(vib>0){
+      const lfo = ctx.createOscillator(); lfo.frequency.value = 5.1;
+      const lg = ctx.createGain();
+      lg.gain.setValueAtTime(0, t0);
+      lg.gain.linearRampToValueAtTime(vib, t0 + Math.min(0.5,dur*0.5)); // cents
+      lfo.connect(lg); lg.connect(osc.detune);
+      lfo.start(t0); lfo.stop(t0+dur+0.3);
+    }
+    const lp = ctx.createBiquadFilter();
+    lp.type="lowpass"; lp.frequency.value = bright; lp.Q.value=0.3;
+
+    const g = ctx.createGain();
+    const a=0.055, r=0.32, peak=0.9, sus=0.72;
+    const end = t0+dur;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(peak, t0+a);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0001,sus), t0+Math.min(dur, a+0.18));
+    g.gain.setValueAtTime(Math.max(0.0001,sus), Math.max(t0+a+0.02, end));
+    g.gain.exponentialRampToValueAtTime(0.0001, end + r);
+
+    osc.connect(lp); lp.connect(g);
+    g.connect(buses.dry); g.connect(buses.rev);
+    osc.start(t0); osc.stop(end + r + 0.05);
+  }
+
+  function liveBuses(){ return {dry:dryGain, rev:revGain}; }
+
+  // ---------- UI: keys ----------
+  const keysEl = $("keys");
+  const keyEls = [];
+  function buildKeys(){
+    keysEl.innerHTML="";
+    keyEls.length=0;
+    PARTIALS.forEach((p,i)=>{
+      const el = document.createElement("div");
+      el.className = "key" + (p.detuned?" detuned":"");
+      const f = partialFreq(p.n);
+      el.innerHTML = `<div class="kb">${KEYMAP[i]?KEYMAP[i].toUpperCase():""}</div>
+        <div class="pn">·${p.n}·</div>
+        <div class="note">${freqToName(f)}</div>
+        <div class="role">${p.role}</div>`;
+      const down = (ev)=>{ ev.preventDefault(); hit(i); };
+      el.addEventListener("touchstart", down, {passive:false});
+      el.addEventListener("mousedown", down);
+      keysEl.appendChild(el);
+      keyEls.push(el);
+    });
+    $("kbhint").textContent = PARTIALS.map((p,i)=>KEYMAP[i]?`${KEYMAP[i]}=${p.n}`:"").filter(Boolean).join("  ");
+  }
+  function flash(i){
+    const el=keyEls[i]; if(!el) return;
+    el.classList.add("active");
+    setTimeout(()=>el.classList.remove("active"),160);
+  }
+
+  // play a partial live + record if armed
+  function hit(i){
+    ensureCtx();
+    if(actx.state==="suspended") actx.resume();
+    const p = PARTIALS[i];
+    const t0 = actx.currentTime + 0.001;
+    voice(actx, liveBuses(), partialFreq(p.n), t0, 0.55, {});
+    flash(i);
+    if(recording) recordEvent(i);
+  }
+
+  // keyboard
+  window.addEventListener("keydown",(e)=>{
+    if(e.repeat) return;
+    const i = KEYMAP.indexOf(e.key.toLowerCase());
+    if(i>=0){ hit(i); }
+  });
+
+  // ---------- preset playback ----------
+  let presetTimer=null, presetStop=null;
+  function scheduleTune(ctx, buses, bpm, startAt, opts){
+    const spb = 60/bpm;
+    let t = startAt;
+    const map = {}; PARTIALS.forEach((p,idx)=>map[p.n]=idx);
+    TUNE.forEach(([n,beats])=>{
+      const dur = beats*spb*0.96;
+      voice(ctx, buses, partialFreq(n), t, dur, opts||{});
+      t += beats*spb;
+    });
+    return t - startAt; // total seconds
+  }
+  $("playPreset").onclick = ()=>{
+    ensureCtx(); if(actx.state==="suspended") actx.resume();
+    stopPreset();
+    const bpm = +$("bpm").value;
+    const total = scheduleTune(actx, liveBuses(), bpm, actx.currentTime+0.08, {});
+    $("playPreset").disabled=true; $("stopPreset").disabled=false;
+    $("presetStatus").textContent = "Playing…";
+    presetStop = setTimeout(()=>{ stopPreset(); }, (total+0.6)*1000);
+  };
+  function stopPreset(){
+    if(presetStop){clearTimeout(presetStop);presetStop=null;}
+    // we can't un-schedule cleanly; rebuild context-light: just suspend+resume quickly
+    $("playPreset").disabled=false; $("stopPreset").disabled=true;
+    $("presetStatus").textContent="Stopped.";
+    if(actx){ // hard cut by ramping master then restoring
+      const m=master.gain; const now=actx.currentTime;
+      m.cancelScheduledValues(now); m.setValueAtTime(m.value,now);
+      m.linearRampToValueAtTime(0.0001, now+0.08);
+      setTimeout(()=>{ m.cancelScheduledValues(actx.currentTime);
+        m.setValueAtTime(masterVol, actx.currentTime); }, 120);
+    }
+  }
+  $("stopPreset").onclick = stopPreset;
+
+  // ---------- recorder ----------
+  let recording=false, recStart=0, recEvents=[];
+  function recordEvent(i){
+    recEvents.push({n:PARTIALS[i].n, t:(performance.now()-recStart)/1000});
+  }
+  $("recBtn").onclick = ()=>{
+    ensureCtx(); if(actx.state==="suspended") actx.resume();
+    if(!recording){
+      recording=true; recStart=performance.now(); recEvents=[];
+      $("recBtn").textContent="● Stop"; $("recBtn").classList.add("primary");
+      $("recStatus").textContent="Recording… tap notes in time.";
+      $("playRec").disabled=true; $("clearRec").disabled=true; $("expTake").disabled=true;
+    } else {
+      recording=false;
+      $("recBtn").textContent="● Record"; $("recBtn").classList.remove("primary");
+      const n=recEvents.length;
+      $("recStatus").textContent = n? `Captured ${n} notes.` : "No notes captured.";
+      $("playRec").disabled = !n; $("clearRec").disabled = !n; $("expTake").disabled = !n;
+    }
+  };
+  function recDur(idx){
+    // duration = gap to next note, clamped; last note gets 0.6s
+    if(idx<recEvents.length-1){
+      return Math.min(2.5, Math.max(0.18, recEvents[idx+1].t - recEvents[idx].t));
+    }
+    return 0.7;
+  }
+  $("playRec").onclick = ()=>{
+    ensureCtx(); if(actx.state==="suspended") actx.resume();
+    const t0=actx.currentTime+0.06;
+    recEvents.forEach((ev,idx)=> voice(actx, liveBuses(), midiToFreq(fundMidi)*ev.n, t0+ev.t, recDur(idx), {}));
+    $("recStatus").textContent="Playing your take…";
+  };
+  $("clearRec").onclick = ()=>{
+    recEvents=[]; $("playRec").disabled=true; $("clearRec").disabled=true; $("expTake").disabled=true;
+    $("recStatus").textContent="Cleared.";
+  };
+
+  // ---------- WAV export (offline render) ----------
+  function encodeWAV(buffer){
+    const numCh=buffer.numberOfChannels, len=buffer.length, rate=buffer.sampleRate;
+    const bytes = 44 + len*numCh*2;
+    const ab=new ArrayBuffer(bytes), view=new DataView(ab);
+    const wr=(o,s)=>{for(let i=0;i<s.length;i++)view.setUint8(o+i,s.charCodeAt(i));};
+    wr(0,"RIFF"); view.setUint32(4,bytes-8,true); wr(8,"WAVE"); wr(12,"fmt ");
+    view.setUint32(16,16,true); view.setUint16(20,1,true); view.setUint16(22,numCh,true);
+    view.setUint32(24,rate,true); view.setUint32(28,rate*numCh*2,true);
+    view.setUint16(32,numCh*2,true); view.setUint16(34,16,true); wr(36,"data");
+    view.setUint32(40,len*numCh*2,true);
+    let off=44;
+    const chans=[]; for(let c=0;c<numCh;c++) chans.push(buffer.getChannelData(c));
+    for(let i=0;i<len;i++){
+      for(let c=0;c<numCh;c++){
+        let s=Math.max(-1,Math.min(1,chans[c][i]));
+        view.setInt16(off, s<0? s*0x8000 : s*0x7FFF, true); off+=2;
+      }
+    }
+    return new Blob([ab],{type:"audio/wav"});
+  }
+  function download(blob,name){
+    const url=URL.createObjectURL(blob), a=document.createElement("a");
+    a.href=url; a.download=name; document.body.appendChild(a); a.click();
+    setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},500);
+  }
+  async function renderOffline(scheduler, seconds){
+    const rate=44100;
+    const octx = new (window.OfflineAudioContext||window.webkitOfflineAudioContext)(2, Math.ceil(rate*seconds), rate);
+    // build a graph in the offline ctx
+    const m=octx.createGain(); m.gain.value=masterVol;
+    const cp=octx.createDynamicsCompressor();
+    const dry=octx.createGain(); dry.gain.value=1;
+    const rv=octx.createGain(); rv.gain.value=revAmt;
+    const cv=octx.createConvolver(); cv.buffer=makeImpulse(octx,2.4,2.6);
+    dry.connect(m); rv.connect(cv); cv.connect(m); m.connect(cp); cp.connect(octx.destination);
+    const wave=makeWave(octx);
+    const buses={dry,rev};
+    scheduler(octx, buses, wave);
+    const buf= await octx.startRendering();
+    return buf;
+  }
+  $("expTune").onclick = async ()=>{
+    $("expStatus").textContent="Rendering ~60s…";
+    const bpm=+$("bpm").value, spb=60/bpm;
+    const oneLen = TUNE.reduce((s,[,b])=>s+b,0)*spb;
+    const loops = Math.max(1, Math.ceil(60/oneLen));
+    const total = oneLen*loops + 1.2;
+    try{
+      const buf = await renderOffline((octx,buses,wave)=>{
+        let start=0.1;
+        for(let L=0;L<loops;L++){
+          let t=start;
+          TUNE.forEach(([n,beats])=>{
+            voice(octx,buses,midiToFreq(fundMidi)*n,t,beats*spb*0.96,{wave});
+            t+=beats*spb;
+          });
+          start += oneLen;
+        }
+      }, total);
+      download(encodeWAV(buf), "alphorn-driftwood-60s.wav");
+      $("expStatus").textContent=`Saved alphorn-driftwood-60s.wav (${loops}× ≈ ${Math.round(oneLen*loops)}s).`;
+    }catch(e){ $("expStatus").textContent="Render failed: "+e.message; }
+  };
+  $("expTake").onclick = async ()=>{
+    if(!recEvents.length) return;
+    $("expStatus").textContent="Rendering your take…";
+    const total = recEvents[recEvents.length-1].t + 1.4;
+    try{
+      const buf = await renderOffline((octx,buses,wave)=>{
+        recEvents.forEach((ev,idx)=> voice(octx,buses,midiToFreq(fundMidi)*ev.n, 0.1+ev.t, recDur(idx), {wave}));
+      }, total);
+      download(encodeWAV(buf), "alphorn-my-take.wav");
+      $("expStatus").textContent="Saved alphorn-my-take.wav.";
+    }catch(e){ $("expStatus").textContent="Render failed: "+e.message; }
+  };
+
+  // ---------- controls ----------
+  function fillKeys(){
+    const sel=$("key");
+    KEYS.forEach((k,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=k.name; sel.appendChild(o); });
+    sel.onchange=()=>{ fundMidi=KEYS[+sel.value].midi; buildKeys(); };
+  }
+  $("vol").oninput=e=>{ masterVol=+e.target.value; if(master) master.gain.value=masterVol; };
+  $("vib").oninput=e=>{ vibCents=+e.target.value; $("vibV").textContent=vibCents+"¢"; };
+  $("rev").oninput=e=>{ revAmt=+e.target.value/100; $("revV").textContent=e.target.value+"%"; if(revGain) revGain.gain.value=revAmt; };
+  $("bri").oninput=e=>{ brightness=+e.target.value; $("briV").textContent=(brightness/1000).toFixed(1)+"k"; };
+  $("bpm").oninput=e=>{ $("bpmV").textContent=e.target.value+" BPM"; };
+
+  // ---------- init ----------
+  fillKeys();
+  buildKeys();
+})();
+</script>
+</body>
+</html>
